@@ -162,19 +162,21 @@ print(hist_plot)
 ### Plot network
 Visualize the edge network seperately.
 ```{r Network_Plot 1}
-family_groups <- as.factor(otu_tax$Family)
-p1 <- qgraph(network_Nplus, 
+family_groups <- as.factor(otu_tax[rownames(network_Nplus),"Family"])
+p <- qgraph::qgraph(network_Nplus, 
   layout = "circle",
   edge.color = ifelse(network_Nplus > 0, "blue", "red"),
   title = "Network Nplus",
   groups = family_groups)
-p2 <- qgraph(network_Nminus, 
+png("network_Nplus_plot.png") # Replace with your desired filename and format
+print(p) 
+p <- qgraph::qgraph(network_Nminus, 
   layout = "circle",
-  edge.color = ifelse(network_Nplus > 0, "blue", "red"),
+  edge.color = ifelse(network_Nminus > 0, "blue", "red"),
   title = "Network Nminus",
   groups = family_groups)
-print(p1)
-print(p2)
+png("network_Nminus_plot.png") # Replace with your desired filename and format
+print(p) 
 ```
 <!-- ```{r Network_Plot 2}
 otu_tax_df <- tax_table(rawdata)[,1:5] %>%

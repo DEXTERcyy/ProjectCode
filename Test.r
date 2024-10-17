@@ -5,6 +5,7 @@ library(SpiecEasi)
 library(JGL)
 library(EstimateGroupNetwork)
 library(SpiecEasi)
+library(qgraph)
 library(igraph)
 library(caret)     # For confusionMatrix function
 library(pROC)      # For ROC and AUC calculation
@@ -24,7 +25,6 @@ shared_otu <- colnames(otu_Ab)
 otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="plusN",]),]
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
 
-# %%
 preprocess_and_estimate_network <- function(data_list, labels = NULL,  nlambda1 = 30, nlambda2 = 30)
   {
     # Helper function for common scaling normalization
@@ -69,17 +69,22 @@ true_adj_Nplus <- (network_Nplus !=0)*1
 true_adj_Nminus <- (network_Nminus !=0)*1
 
 # %% Plot network on family level
-family_groups <- as.factor(otu_tax$Family)
-qgraph(network_Nplus, 
+family_groups <- as.factor(otu_tax[rownames(network_Nplus),"Family"])
+p <- qgraph::qgraph(network_Nplus, 
   layout = "circle",
   edge.color = ifelse(network_Nplus > 0, "blue", "red"),
   title = "Network Nplus",
   groups = family_groups)
-qgraph(network_Nminus, 
+png("network_Nplus_plot.png") # Replace with your desired filename and format
+print(p) 
+p <- qgraph::qgraph(network_Nminus, 
   layout = "circle",
-  edge.color = ifelse(network_Nplus > 0, "blue", "red"),
+  edge.color = ifelse(network_Nminus > 0, "blue", "red"),
   title = "Network Nminus",
   groups = family_groups)
+png("network_Nminus_plot.png") # Replace with your desired filename and format
+print(p) 
+dev.off()
 # %%
 # # Visualize network_Nplus (Circular Layout)
 # otu_tax_df <- tax_table(rawdata)[,1:5] %>%
