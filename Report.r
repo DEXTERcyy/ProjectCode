@@ -68,90 +68,90 @@ network_Nminus <- network_results$Nminus
 true_adj_Nplus <- (network_Nplus !=0)*1
 true_adj_Nminus <- (network_Nminus !=0)*1
 
-# %% Plot network on family level
-family_groups <- as.factor(otu_tax[rownames(network_Nplus),"Family"])
-p <- qgraph::qgraph(network_Nplus, 
+# %% Plot network on Phylum level
+Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
+png("network_Nplus_Phylum.png")
+qgraph::qgraph(network_Nplus, 
   layout = "circle",
   edge.color = ifelse(network_Nplus > 0, "blue", "red"),
-  title = "Network Nplus",
-  groups = family_groups)
-png("network_Nplus_plot.png") # Replace with your desired filename and format
-print(p) 
-p <- qgraph::qgraph(network_Nminus, 
+  title = "Network Nplus by Phylum",
+  groups = Phylum_groups)
+dev.off()
+
+png("network_Nminus_Phylum.png")
+qgraph::qgraph(network_Nminus, 
   layout = "circle",
   edge.color = ifelse(network_Nminus > 0, "blue", "red"),
-  title = "Network Nminus",
-  groups = family_groups)
-png("network_Nminus_plot.png") # Replace with your desired filename and format
-print(p) 
+  title = "Network Nminus by Phylum",
+  groups = Phylum_groups)
 dev.off()
-# %%
-# # Visualize network_Nplus (Circular Layout)
-# otu_tax_df <- tax_table(rawdata)[,1:5] %>%
-#   as.data.frame() %>%
-#   rownames_to_column("OTU") %>%
-#   select(-OTU, everything(), OTU)
 
-# pairs <- list(
-#   c("Kingdom", "Phylum"),
-#   c("Phylum", "Class"),
-#   c("Class", "Order"),
-#   c("Order", "Family"),
-#   c("Family", "OTU"))
-# # Function to create edges for a single pair
-# create_edges <- function(pair, data)
-#   {
-#     from <- data[[pair[1]]]
-#     to <- data[[pair[2]]]
-#     data.frame(from = from, to = to)
-#   }
+# Visualize network_Nplus (Circular Layout)
+otu_tax_df <- tax_table(rawdata)[,1:5] %>%
+  as.data.frame() %>%
+  rownames_to_column("OTU") %>%
+  select(-OTU, everything(), OTU)
 
-# # Apply the function to all pairs and combine the results
-# edges <- unique(do.call(rbind, lapply(pairs, create_edges, data = otu_tax_df[otu_tax_df$OTU %in% shared_otu, ])))
+pairs <- list(
+  c("Kingdom", "Phylum"),
+  c("Phylum", "Class"),
+  c("Class", "Order"),
+  c("Order", "Family"),
+  c("Family", "OTU"))
+# Function to create edges for a single pair
+create_edges <- function(pair, data)
+  {
+    from <- data[[pair[1]]]
+    to <- data[[pair[2]]]
+    data.frame(from = from, to = to)
+  }
 
-# # Extract lower triangular part
-# lower_tri <- lower.tri(network_Nplus, diag = FALSE)
-# # Get non-zero elements and their indices
-# non_zero <- which(lower_tri & network_Nplus != 0, arr.ind = TRUE)
-# # Create the new table
-# connect <- data.frame(
-#   from = rownames(network_Nplus)[non_zero[, 1]],
-#   to = colnames(network_Nplus)[non_zero[, 2]],
-#   score = network_Nplus[non_zero])
+# Apply the function to all pairs and combine the results
+edges <- unique(do.call(rbind, lapply(pairs, create_edges, data = otu_tax_df[otu_tax_df$OTU %in% shared_otu, ])))
 
-# # create a vertices data.frame. One line per object of our hierarchy
-# vertices  <-  data.frame(
-#   name = unique(c(as.character(edges$from), as.character(edges$to))) , 
-#   value = runif(length(unique(c(as.character(edges$from), as.character(edges$to))))))
-# vertices$group  <-  edges$from[ match( vertices$name, edges$to ) ]
+# Extract lower triangular part
+lower_tri <- lower.tri(network_Nplus, diag = FALSE)
+# Get non-zero elements and their indices
+non_zero <- which(lower_tri & network_Nplus != 0, arr.ind = TRUE)
+# Create the new table
+connect <- data.frame(
+  from = rownames(network_Nplus)[non_zero[, 1]],
+  to = colnames(network_Nplus)[non_zero[, 2]],
+  score = network_Nplus[non_zero])
 
-# vertices$id <- NA
-# myleaves <- which(is.na(match(vertices$name, edges$from)))
-# vertices$value[myleaves] <- colSums(network_Nplus) / sum(network_Nplus)
-# nleaves <- length(myleaves)
-# vertices$id[myleaves] <- seq(1:nleaves)
-# vertices$angle <- 90 - 360 * vertices$id / nleaves
-# vertices$angle <- ifelse(vertices$angle < -90, vertices$angle+180, vertices$angle)
-# vertices$hjust <- ifelse( vertices$angle < -90, 1, 0)
-# mygraph <- igraph::graph_from_data_frame( edges, vertices=vertices )
-# from  <-  match( connect$from, vertices$name)
-# to  <-  match( connect$to, vertices$name)
+# create a vertices data.frame. One line per object of our hierarchy
+vertices  <-  data.frame(
+  name = unique(c(as.character(edges$from), as.character(edges$to))) , 
+  value = runif(length(unique(c(as.character(edges$from), as.character(edges$to))))))
+vertices$group  <-  edges$from[ match( vertices$name, edges$to ) ]
 
-# ggraph(mygraph, layout = 'dendrogram', circular = TRUE) + 
-#   geom_conn_bundle(data = get_con(from = from, to = to), alpha=0.2, width=0.1, aes(colour = after_stat(index))) +
-#   scale_edge_colour_gradient(low = "red", high = "blue") +
-#   geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label=name, angle = angle, hjust=hjust, colour=group), size=2, alpha=1) +
-#   geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, colour=group, size=value, alpha=0.2)) +
-#   scale_colour_manual(values= rep( brewer.pal(14,"Paired") , 30)) +
-#   scale_size_continuous(range = c(0.1,10) ) +
+vertices$id <- NA
+myleaves <- which(is.na(match(vertices$name, edges$from)))
+vertices$value[myleaves] <- colSums(network_Nplus) / sum(network_Nplus)
+nleaves <- length(myleaves)
+vertices$id[myleaves] <- seq(1:nleaves)
+vertices$angle <- 90 - 360 * vertices$id / nleaves
+vertices$angle <- ifelse(vertices$angle < -90, vertices$angle+180, vertices$angle)
+vertices$hjust <- ifelse( vertices$angle < -90, 1, 0)
+mygraph <- igraph::graph_from_data_frame( edges, vertices=vertices )
+from  <-  match( connect$from, vertices$name)
+to  <-  match( connect$to, vertices$name)
 
-#   theme_void() +
-#   theme(
-#     legend.position="none",
-#     plot.margin=unit(c(0,0,0,0),"cm"),
-#   ) +
-#   expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
-# ggsave("Nplus_plot_circularized.pdf", width = 12, height = 12, units = "in")
+ggraph::ggraph(mygraph, layout = 'dendrogram', circular = TRUE) + 
+  geom_conn_bundle(data = get_con(from = from, to = to), alpha=0.2, width=0.1, aes(colour = after_stat(index))) +
+  scale_edge_colour_gradient(low = "red", high = "blue") +
+  geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label=name, angle = angle, hjust=hjust, colour=group), size=2, alpha=1) +
+  geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, colour=group, size=value, alpha=0.2)) +
+  scale_colour_manual(values= rep( brewer.pal(14,"Paired") , 30)) +
+  scale_size_continuous(range = c(0.1,10) ) +
+
+  theme_void() +
+  theme(
+    legend.position="none",
+    plot.margin=unit(c(0,0,0,0),"cm"),
+  ) +
+  expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
+ggsave("Nplus_plot_circularized.pdf", width = 12, height = 12, units = "in")
 #%%
 # Visualize Edge weights
 cor_values_Nplus <- as.vector(network_Nplus)
@@ -160,7 +160,7 @@ cor_df <- data.frame(
   correlation = c(cor_values_Nplus, cor_values_Nminus),
   group = factor(rep(c("Nplus", "Nminus"), each = length(cor_values_Nplus)))
 )
-ggplot(cor_df, aes(x = correlation, fill = group)) +
+ggplot2::ggplot(cor_df, aes(x = correlation, fill = group)) +
   geom_histogram(position = "dodge", bins = 30, alpha = 0.7) +
   scale_fill_manual(values = c("Nplus" = "blue", "Nminus" = "red")) +
   theme_minimal() +
@@ -181,7 +181,7 @@ synthesize_scaled_data <- function(dat, net)
   }
 
 Sim_list <- list()
-for (i in 1:50)
+for (i in 1:100)
   {
     Sim_list[[i]] <- list(
       Nplus = synthesize_scaled_data(otu_Ab_Nplus, network_Nplus),
@@ -189,12 +189,12 @@ for (i in 1:50)
     )
   }
 Res_sim <- list()
-for (i in 1:50)
+for (i in 1:100)
   {
     Res_sim[[i]] <- preprocess_and_estimate_network(Sim_list[[i]], labels = shared_otu)
   }
 Sim_adj <- list()
-for (i in 1:50)
+for (i in 1:100)
   {
     Sim_adj[[i]] <- list(
       Nplus = (Res_sim[[i]]$Nplus !=0)*1,
@@ -248,7 +248,7 @@ calculate_metrics <- function(true_adj, sim_adj)
                 F1 = f1, AUC = auc, MCC = mcc))
   }
 
-confusion_results <- lapply(1:50, function(i)
+confusion_results <- lapply(1:100, function(i)
   {
     Nplus_metrics <- calculate_metrics(true_adj_Nplus, Sim_adj[[i]]$Nplus)
     Nminus_metrics <- calculate_metrics(true_adj_Nminus, Sim_adj[[i]]$Nminus)
@@ -264,24 +264,30 @@ results_df_long <- results_df %>%
                names_to = c("group", "metric"), 
                names_sep = "\\.",
                values_to = "value") %>%
-  dplyr::mutate(matrix_id = rep(1:50, each = 14))
+  dplyr::mutate(matrix_id = rep(1:100, each = 14))
 
+# %%
 for (metric_name in unique(results_df_long$metric)) {
-    plot_data <- results_df_long %>%
-        dplyr::filter(metric == metric_name)
-    
-    p <- ggplot(plot_data, aes(x = matrix_id, y = value, fill = group)) +
-        geom_bar(stat = "identity", position = "dodge") +
-        labs(title = paste(metric_name, "for Simulated Networks"),
-            x = "Matrix ID",
-            y = metric_name) +
-        theme_bw()
-    print(p)
-  ggsave(paste0(metric_name, "_plot.png"), p)
+  plot_data <- results_df_long %>%
+    dplyr::filter(metric == metric_name)
+  p <- ggplot(plot_data, aes(x = matrix_id, y = value, fill = group)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    labs(title = paste(metric_name, "for Simulated Networks"),
+      x = "Matrix ID",
+      y = metric_name) +
+    theme_bw()
+    ggsave(paste0(metric_name, "_barplot.png"), p)
 }
 
 # %%
-qgraph(network_Nplus, 
-  layout = "spring",      
-  edge.color = ifelse(network_Nplus > 0, "blue", "red"), 
-  title = "Network Nplus") 
+for (metric_name in unique(results_df_long$metric)) {
+  plot_data <- results_df_long %>% filter(metric == metric_name)
+  
+  p <- ggplot(plot_data, aes(x = group, y = value, fill = group)) +
+    geom_boxplot() +
+    labs(title = paste(metric_name, "Distribution"),
+         x = "Nitrogen Condition",
+         y = metric_name) +
+    theme_bw()
+  ggsave(paste0(metric_name, "_boxplot.png"), p)
+}

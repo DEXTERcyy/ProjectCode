@@ -70,7 +70,7 @@ preprocess_and_estimate_network <- function(data_list, labels = NULL,  nlambda1 
       nlambda1 = nlambda1, 
       nlambda2 = nlambda2, 
       truncate = 1e-10, 
-      criterion = 'aic'
+      criterion = 'bic'
     )
     return(Res)
   }
@@ -124,7 +124,7 @@ preprocess_and_estimate_network <- function(data_list, labels = NULL,  nlambda1 
       nlambda1 = nlambda1, 
       nlambda2 = nlambda2, 
       truncate = 1e-10, 
-      criterion = 'aic'
+      criterion = 'bic'
     )
 
     return(Res)
@@ -163,40 +163,36 @@ print(hist_plot)
 Visualize the edge network seperately.
 ```{r Network_Plot 1}
 family_groups <- as.factor(otu_tax[rownames(network_Nplus),"Family"])
-p <- qgraph::qgraph(network_Nplus, 
+qgraph::qgraph(network_Nplus, 
   layout = "circle",
   edge.color = ifelse(network_Nplus > 0, "blue", "red"),
   title = "Network Nplus",
   groups = family_groups)
-png("network_Nplus_plot.png") # Replace with your desired filename and format
-print(p) 
-p <- qgraph::qgraph(network_Nminus, 
+qgraph::qgraph(network_Nminus, 
   layout = "circle",
   edge.color = ifelse(network_Nminus > 0, "blue", "red"),
   title = "Network Nminus",
   groups = family_groups)
-png("network_Nminus_plot.png") # Replace with your desired filename and format
-print(p) 
 ```
 <!-- ```{r Network_Plot 2}
 otu_tax_df <- tax_table(rawdata)[,1:5] %>%
-  as.data.frame() %>%
-  rownames_to_column("OTU") %>%
-  select(-OTU, everything(), OTU)
+as.data.frame() %>%
+rownames_to_column("OTU") %>%
+select(-OTU, everything(), OTU)
 
 pairs <- list(
-  c("Kingdom", "Phylum"),
-  c("Phylum", "Class"),
-  c("Class", "Order"),
-  c("Order", "Family"),
-  c("Family", "OTU"))
+c("Kingdom", "Phylum"),
+c("Phylum", "Class"),
+c("Class", "Order"),
+c("Order", "Family"),
+c("Family", "OTU"))
 # Function to create edges for a single pair
 create_edges <- function(pair, data)
-  {
-    from <- data[[pair[1]]]
-    to <- data[[pair[2]]]
-    data.frame(from = from, to = to)
-  }
+{
+  from <- data[[pair[1]]]
+  to <- data[[pair[2]]]
+  data.frame(from = from, to = to)
+}
 
 # Apply the function to all pairs and combine the results
 edges <- unique(do.call(rbind, lapply(pairs, create_edges, data = otu_tax_df[otu_tax_df$OTU %in% shared_otu, ])))
@@ -207,14 +203,14 @@ lower_tri <- lower.tri(network_Nplus, diag = FALSE)
 non_zero <- which(lower_tri & network_Nplus != 0, arr.ind = TRUE)
 # Create the new table
 connect <- data.frame(
-  from = rownames(network_Nplus)[non_zero[, 1]],
-  to = colnames(network_Nplus)[non_zero[, 2]],
-  score = network_Nplus[non_zero])
+from = rownames(network_Nplus)[non_zero[, 1]],
+to = colnames(network_Nplus)[non_zero[, 2]],
+score = network_Nplus[non_zero])
 
 # create a vertices data.frame. One line per object of our hierarchy
 vertices  <-  data.frame(
-  name = unique(c(as.character(edges$from), as.character(edges$to))) , 
-  value = runif(length(unique(c(as.character(edges$from), as.character(edges$to))))))
+name = unique(c(as.character(edges$from), as.character(edges$to))) , 
+value = runif(length(unique(c(as.character(edges$from), as.character(edges$to))))))
 vertices$group  <-  edges$from[ match( vertices$name, edges$to ) ]
 
 vertices$id <- NA
@@ -230,19 +226,19 @@ from  <-  match( connect$from, vertices$name)
 to  <-  match( connect$to, vertices$name)
 
 p <- ggraph(mygraph, layout = 'dendrogram', circular = TRUE) + 
-  geom_conn_bundle(data = get_con(from = from, to = to), alpha=0.2, width=0.1, aes(colour = after_stat(index))) +
-  scale_edge_colour_gradient(low = "red", high = "blue") +
-  geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label=name, angle = angle, hjust=hjust, colour=group), size=2, alpha=1) +
-  geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, colour=group, size=value, alpha=0.2)) +
-  scale_colour_manual(values= rep( brewer.pal(14,"Paired") , 30)) +
-  scale_size_continuous(range = c(0.1,10) ) +
+geom_conn_bundle(data = get_con(from = from, to = to), alpha=0.2, width=0.1, aes(colour = after_stat(index))) +
+scale_edge_colour_gradient(low = "red", high = "blue") +
+geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label=name, angle = angle, hjust=hjust, colour=group), size=2, alpha=1) +
+geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, colour=group, size=value, alpha=0.2)) +
+scale_colour_manual(values= rep( brewer.pal(14,"Paired") , 30)) +
+scale_size_continuous(range = c(0.1,10) ) +
 
-  theme_void() +
-  theme(
-    legend.position="none",
-    plot.margin=unit(c(0,0,0,0),"cm"),
-  ) +
-  expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
+theme_void() +
+theme(
+  legend.position="none",
+  plot.margin=unit(c(0,0,0,0),"cm"),
+) +
+expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
 print(p)
 ``` -->
 
