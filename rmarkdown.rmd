@@ -160,19 +160,19 @@ print(hist_plot)
 ```
 
 ### Plot network
-Visualize the edge network seperately.
+Visualize the edge network seperately and colorized by Phylum.
 ```{r Network_Plot 1}
-family_groups <- as.factor(otu_tax[rownames(network_Nplus),"Family"])
+Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
 qgraph::qgraph(network_Nplus, 
   layout = "circle",
   edge.color = ifelse(network_Nplus > 0, "blue", "red"),
-  title = "Network Nplus",
-  groups = family_groups)
+  title = "Network Nplus by Phylum",
+  groups = Phylum_groups)
 qgraph::qgraph(network_Nminus, 
   layout = "circle",
   edge.color = ifelse(network_Nminus > 0, "blue", "red"),
-  title = "Network Nminus",
-  groups = family_groups)
+  title = "Network Nminus by Phylum",
+  groups = Phylum_groups)
 ```
 <!-- ```{r Network_Plot 2}
 otu_tax_df <- tax_table(rawdata)[,1:5] %>%
@@ -349,13 +349,19 @@ for (metric_name in unique(results_df_long$metric)) {
     plot_data <- results_df_long %>%
         dplyr::filter(metric == metric_name)
     
-    p <- ggplot(plot_data, aes(x = matrix_id, y = value, fill = group)) +
+    p1 <- ggplot(plot_data, aes(x = matrix_id, y = value, fill = group)) +
         geom_bar(stat = "identity", position = "dodge") +
         labs(title = paste(metric_name, "for Simulated Networks"),
             x = "Matrix ID",
             y = metric_name) +
         theme_bw()
-    print(p)
-  #ggsave(paste0(metric_name, "_plot.png"), p)
+    print(p1)
+    p2 <- ggplot(plot_data, aes(x = group, y = value, fill = group)) +
+        geom_boxplot() +
+        labs(title = paste(metric_name, "Distribution"),
+            x = "Nitrogen Condition",
+            y = metric_name) +
+        theme_bw()
+    print(p2)
 }
 ```

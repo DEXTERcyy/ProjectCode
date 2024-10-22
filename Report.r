@@ -282,7 +282,7 @@ for (metric_name in unique(results_df_long$metric)) {
 # %%
 for (metric_name in unique(results_df_long$metric)) {
   plot_data <- results_df_long %>% filter(metric == metric_name)
-  
+
   p <- ggplot(plot_data, aes(x = group, y = value, fill = group)) +
     geom_boxplot() +
     labs(title = paste(metric_name, "Distribution"),
