@@ -2,9 +2,6 @@
 library(phyloseq)
 library(SPRING)
 library(SpiecEasi)
-library(JGL)
-library(EstimateGroupNetwork)
-library(SpiecEasi)
 library(qgraph)
 library(igraph)
 library(caret)     # For confusionMatrix function
@@ -16,6 +13,7 @@ library(ggraph)
 library(tidyverse)
 library(RColorBrewer)
 library(dplyr)
+source("stabENG.r")
 rawdata <- readRDS("data//n_starvation.rds")
 otu_Ab <- as.data.frame(t(otu_table(rawdata)))
 sam_info <- as.data.frame(sample_data(rawdata))
@@ -24,65 +22,35 @@ shared_otu <- colnames(otu_Ab)
 # split otu_Ab by meta
 otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="plusN",]),]
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
-
-preprocess_and_estimate_network <- function(data_list, labels = NULL,  nlambda1 = 30, nlambda2 = 30)
-  {
-    # Helper function for common scaling normalization
-    norm_to_total <- function(x) x / sum(x)
-    common_scaling <- function(data) {
-      depths <- rowSums(data)
-      data_normalized <- t(apply(data, 1, norm_to_total))
-      common_depth <- min(depths)  # Calculate only once
-      data_common_scaled <- round(data_normalized * common_depth) 
-      return(data_common_scaled)
-    }
-    # Preprocessing steps for each data set in the list
-    processed_data_list <- lapply(data_list, function(data) {
-      scaled_data <- common_scaling(data)
-      mclr_data <- mclr(scaled_data) # Using SPRING's mclr
-      Kcor <- mixedCCA::estimateR(mclr_data, type = "trunc", method = "approx", tol = 1e-6, verbose = FALSE)$R
-      return(Kcor)
-    })
-
-    # Sample sizes for each dataset.
-    n_samples <- sapply(data_list, nrow)
-
-    # Estimate the network using the preprocessed data
-    Res <- EstimateGroupNetwork(
-      processed_data_list, 
-      inputType = "list.of.covariance.matrices",
-      n = n_samples,
-      labels = labels, # Pass labels directly 
-      nlambda1 = nlambda1, 
-      nlambda2 = nlambda2, 
-      truncate = 1e-10, 
-      criterion = 'bic' # bic better / less FP
-    )
-    return(Res)
-  }
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
-network_results <- preprocess_and_estimate_network(data_list, labels = shared_otu)
-network_Nplus <- network_results$Nplus
-network_Nminus <- network_results$Nminus
 
-true_adj_Nplus <- (network_Nplus !=0)*1
-true_adj_Nminus <- (network_Nminus !=0)*1
+# %% 
+source("stabENG.r")
+network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 20,
+  nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
+  lambda2.init=0.01,ebic.gamma=0.2)
+network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
+network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
+diag(network_Nplus) = 0
+diag(network_Nminus) = 0
+#save.image("network_results.RData")
+#load(file = "network_results.RData")
 
 # %% Plot network on Phylum level
 Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
-png("network_Nplus_Phylum.png")
+png(filename="Plots/network_Nplus_Phylum_Stab.png")
 qgraph::qgraph(network_Nplus, 
   layout = "circle",
   edge.color = ifelse(network_Nplus > 0, "blue", "red"),
-  title = "Network Nplus by Phylum",
+  title = "Stab Network Nplus by Phylum",
   groups = Phylum_groups)
 dev.off()
 
-png("network_Nminus_Phylum.png")
+png(filename="Plots/network_Nminus_Phylum_Stab.png")
 qgraph::qgraph(network_Nminus, 
   layout = "circle",
   edge.color = ifelse(network_Nminus > 0, "blue", "red"),
-  title = "Network Nminus by Phylum",
+  title = "Stab Network Nminus by Phylum",
   groups = Phylum_groups)
 dev.off()
 
@@ -151,7 +119,7 @@ ggraph::ggraph(mygraph, layout = 'dendrogram', circular = TRUE) +
     plot.margin=unit(c(0,0,0,0),"cm"),
   ) +
   expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
-ggsave("Nplus_plot_circularized.pdf", width = 12, height = 12, units = "in")
+ggsave(filename="Plots/Nplus_plot_circularized.pdf", width = 12, height = 12, units = "in")
 #%%
 # Visualize Edge weights
 cor_values_Nplus <- as.vector(network_Nplus)
@@ -191,17 +159,17 @@ for (i in 1:100)
 Res_sim <- list()
 for (i in 1:100)
   {
-    Res_sim[[i]] <- preprocess_and_estimate_network(Sim_list[[i]], labels = shared_otu)
+    Res_sim[[i]] <- stabENG(Sim_list[[i]], labels = shared_otu)
   }
 Sim_adj <- list()
 for (i in 1:100)
   {
     Sim_adj[[i]] <- list(
-      Nplus = (Res_sim[[i]]$Nplus !=0)*1,
-      Nminus = (Res_sim[[i]]$Nminus !=0)*1
+      Nplus = (Res_sim[[i]]$opt.fit$Nplus !=0)*1,
+      Nminus = (Res_sim[[i]]$opt.fit$Nminus !=0)*1
     )
   }
-#%%
+#%% Confusion matrices
 calculate_mcc <- function(tp, tn, fp, fn)
   {
     numerator <- (tp * tn) - (fp * fn)
@@ -250,10 +218,12 @@ calculate_metrics <- function(true_adj, sim_adj)
 
 confusion_results <- lapply(1:100, function(i)
   {
+    true_adj_Nplus <- (network_Nplus !=0)*1
+    true_adj_Nminus <- (network_Nminus !=0)*1
     Nplus_metrics <- calculate_metrics(true_adj_Nplus, Sim_adj[[i]]$Nplus)
     Nminus_metrics <- calculate_metrics(true_adj_Nminus, Sim_adj[[i]]$Nminus)
     return(list(Nplus = Nplus_metrics, Nminus = Nminus_metrics))
-  })
+})
 
 
 results_df <- do.call(rbind, lapply(confusion_results, as.data.frame))
@@ -266,7 +236,7 @@ results_df_long <- results_df %>%
                values_to = "value") %>%
   dplyr::mutate(matrix_id = rep(1:100, each = 14))
 
-# %%
+# %% barplot
 for (metric_name in unique(results_df_long$metric)) {
   plot_data <- results_df_long %>%
     dplyr::filter(metric == metric_name)
@@ -276,10 +246,10 @@ for (metric_name in unique(results_df_long$metric)) {
       x = "Matrix ID",
       y = metric_name) +
     theme_bw()
-    ggsave(paste0(metric_name, "_barplot.png"), p)
+    ggsave(filename = paste0("Plots/", metric_name, "_barplot.png"), p)
 }
 
-# %%
+# %% boxplot
 for (metric_name in unique(results_df_long$metric)) {
   plot_data <- results_df_long %>% filter(metric == metric_name)
 
@@ -289,5 +259,5 @@ for (metric_name in unique(results_df_long$metric)) {
          x = "Nitrogen Condition",
          y = metric_name) +
     theme_bw()
-  ggsave(paste0(metric_name, "_boxplot.png"), p)
+  ggsave(filename = paste0("Plots/", metric_name, "_boxplot.png"), p)
 }
