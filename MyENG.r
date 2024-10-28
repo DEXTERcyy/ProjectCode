@@ -49,8 +49,8 @@ myENG <-
     }
 
     ## now identify block structure using igraph:
-    g1 <- igraph::graph.adjacency(critboth)
-    cout = igraph::clusters(g1)
+    g1 <- igraph::graph_from_adjacency_matrix(critboth)
+    cout = igraph::components(g1)
     blocklist = list()
     # identify unconnected elements, and get blocks:
     unconnected = c()

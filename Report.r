@@ -120,7 +120,7 @@ ggraph::ggraph(mygraph, layout = 'dendrogram', circular = TRUE) +
   ) +
   expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
 ggsave(filename="Plots/Nplus_plot_circularized.pdf", width = 12, height = 12, units = "in")
-#%%
+
 # Visualize Edge weights
 cor_values_Nplus <- as.vector(network_Nplus)
 cor_values_Nminus <- as.vector(network_Nminus)
@@ -136,6 +136,7 @@ ggplot2::ggplot(cor_df, aes(x = correlation, fill = group)) +
        x = "Correlation",
        y = "Frequency",
        fill = "Nitro Condition")
+
 #%%
 set.seed(10010)
 synthesize_scaled_data <- function(dat, net)
@@ -149,7 +150,7 @@ synthesize_scaled_data <- function(dat, net)
   }
 
 Sim_list <- list()
-for (i in 1:100)
+for (i in 1:10)
   {
     Sim_list[[i]] <- list(
       Nplus = synthesize_scaled_data(otu_Ab_Nplus, network_Nplus),
@@ -157,12 +158,12 @@ for (i in 1:100)
     )
   }
 Res_sim <- list()
-for (i in 1:100)
+for (i in 1:10)
   {
     Res_sim[[i]] <- stabENG(Sim_list[[i]], labels = shared_otu)
   }
 Sim_adj <- list()
-for (i in 1:100)
+for (i in 1:10)
   {
     Sim_adj[[i]] <- list(
       Nplus = (Res_sim[[i]]$opt.fit$Nplus !=0)*1,
@@ -216,7 +217,7 @@ calculate_metrics <- function(true_adj, sim_adj)
                 F1 = f1, AUC = auc, MCC = mcc))
   }
 
-confusion_results <- lapply(1:100, function(i)
+confusion_results <- lapply(1:10, function(i)
   {
     true_adj_Nplus <- (network_Nplus !=0)*1
     true_adj_Nminus <- (network_Nminus !=0)*1
@@ -234,7 +235,7 @@ results_df_long <- results_df %>%
                names_to = c("group", "metric"), 
                names_sep = "\\.",
                values_to = "value") %>%
-  dplyr::mutate(matrix_id = rep(1:100, each = 14))
+  dplyr::mutate(matrix_id = rep(1:10, each = 14))
 
 # %% barplot
 for (metric_name in unique(results_df_long$metric)) {
