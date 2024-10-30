@@ -58,7 +58,7 @@ dev.off()
 otu_tax_df <- tax_table(rawdata)[,1:5] %>%
   as.data.frame() %>%
   rownames_to_column("OTU") %>%
-  select(-OTU, everything(), OTU)
+    dplyr::select(-OTU, everything(), OTU)
 
 pairs <- list(
   c("Kingdom", "Phylum"),
@@ -150,7 +150,7 @@ synthesize_scaled_data <- function(dat, net)
   }
 
 Sim_list <- list()
-for (i in 1:10)
+for (i in 1:50)
   {
     Sim_list[[i]] <- list(
       Nplus = synthesize_scaled_data(otu_Ab_Nplus, network_Nplus),
@@ -158,12 +158,12 @@ for (i in 1:10)
     )
   }
 Res_sim <- list()
-for (i in 1:10)
+for (i in 1:50)
   {
     Res_sim[[i]] <- stabENG(Sim_list[[i]], labels = shared_otu)
   }
 Sim_adj <- list()
-for (i in 1:10)
+for (i in 1:50)
   {
     Sim_adj[[i]] <- list(
       Nplus = (Res_sim[[i]]$opt.fit$Nplus !=0)*1,
@@ -217,7 +217,7 @@ calculate_metrics <- function(true_adj, sim_adj)
                 F1 = f1, AUC = auc, MCC = mcc))
   }
 
-confusion_results <- lapply(1:10, function(i)
+confusion_results <- lapply(1:50, function(i)
   {
     true_adj_Nplus <- (network_Nplus !=0)*1
     true_adj_Nminus <- (network_Nminus !=0)*1
@@ -235,7 +235,7 @@ results_df_long <- results_df %>%
                names_to = c("group", "metric"), 
                names_sep = "\\.",
                values_to = "value") %>%
-  dplyr::mutate(matrix_id = rep(1:10, each = 14))
+  dplyr::mutate(matrix_id = rep(1:50, each = 14))
 
 # %% barplot
 for (metric_name in unique(results_df_long$metric)) {
