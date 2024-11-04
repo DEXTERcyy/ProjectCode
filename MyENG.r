@@ -160,7 +160,7 @@ myENG <-
         dimnames(whole.theta[[k]])[[1]] = dimnames(whole.theta[[k]])[[2]] = dimnames(S[[k]])[[2]]
       }
 
-    theta <- whole.theta #precision matrix
+    theta <- whole.theta #precision matrix / inverse of covariance matrix
 
     list("network" = lapply(theta, qgraph::wi2net), "concentrationMatrix" = theta)
   }
