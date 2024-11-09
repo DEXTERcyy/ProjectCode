@@ -143,7 +143,7 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1,
       stabENG_select_lambda1_parallel(Y,labels=labels, rep.num=rep.num,n.vals=n.vals,stars.subsample.ratios=stars.subsample.ratios,
                                       lambda1s=lambda1s,lambda2=lambda2,penalize.diagonal = penalize.diagonal,
                                       seed=seeds[i], array.list=est$merge)
-    } #! task 1 failed - "could not find function "preprocess_and_estimate_network""
+    }
     parallel::stopCluster(cl)
     for(j in 1:length(lambda1s)){
       for(k in 1:K){
