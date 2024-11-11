@@ -31,8 +31,9 @@ network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep
   lambda2.init=0.01,ebic.gamma=0.2)
 network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
-diag(network_Nplus) = 0
-diag(network_Nminus) = 0
+network_Nplus_pcor <- lapply(network_Nplus, qgraph::wi2net)
+network_Nminus_pcor <- lapply(network_Nminus, qgraph::wi2net)
+diag(network_Nplus) = diag(network_Nminus) = diag(network_Nplus_pcor) = diag(network_Nminus_pcor) <- 0
 #save.image("network_results_stabENG.RData")
 #load(file = "network_results_stabENG.RData")
 
