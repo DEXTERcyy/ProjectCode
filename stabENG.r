@@ -73,6 +73,7 @@ stabENG = function(Y,var.thresh = 0.1, subsample.ratio = NULL, labels = NULL,
   est$total.variability = est.lambda1$total.variability
   est$variability = est.lambda1$variability
   est$opt.lambda1 = est.lambda1$opt.lambda1
+  est$opt.fit.pcor = preprocess_and_estimate_network(Y,labels = labels, lambda1 = est.lambda1$opt.lambda1, lambda2 = est.lambda2$opt.lambda2)$pcor
   return(est)
 }
 
@@ -212,7 +213,7 @@ stabENG_select_lambda2_eBIC = function(Y,labels, weights="equal",
     }
   }
   opt.ind = which.min(ebic.vals)
-  res=list(opt.fit=mods.lam2[[opt.ind]],opt.lambda2 = lambda2.vals[opt.ind], opt.index = opt.ind,opt.ebic=ebic.vals[opt.ind],
+  res=list(opt.fit=mods.lam2[[opt.ind]], opt.lambda1 = lambda1, opt.lambda2 = lambda2.vals[opt.ind], opt.index = opt.ind,opt.ebic=ebic.vals[opt.ind],
            ebic.vals=ebic.vals, lambda2s=lambda2.vals, mods=mods.lam2, opt.sparsities = unlist(lapply(mods.lam2[[opt.ind]],sparsity)))
 }
 
