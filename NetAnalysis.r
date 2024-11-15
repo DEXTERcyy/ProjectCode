@@ -231,9 +231,9 @@ myNetAnalysis <- function(data, data2,sampleSize = c(118,127),
     return(output)
 }
 # %%
-# load(file = "network_results_stabENG.RData")
-source(file="C:\\Users\\dexter\\Downloads\\NetCoMi\\R\\dot-sparsify.R")
-source(file="C:\\Userss\\dexter\\Downloads\\NetCoMi\\R\\transform.R")
+# load(file = "DataImage\\network_results_stabENG.RData")
+source(file="C:\\Users\\dexter\\Documents\\VU_UVA\\ResearchProject\\ProjectCode\\Packages\\NetComi\\R\\dot-sparsify.R")
+source(file="C:\\Userss\\dexter\\Downloads\\VU_UVA\\ResearchProject\\ProjectCode\\Packages\\NetComi\\R\\transform.R")
 # %%
 NetRes <- myNetAnalysis(network_Nplus_pcor,network_Nminus_pcor)
 netAnalyze(NetRes, 
