@@ -4,11 +4,9 @@ myNetAnalysis <- function(data, data2,sampleSize = c(118,127),
     set.seed(10010)
     assoMat1 <- data
     assoMat2 <- data2
-    counts1 <- NULL
-    counts2 <- NULL
+    counts1 <- counts2 <- NULL
     countsJointOrig <- NULL
-    countsOrig1 <- NULL
-    countsOrig2 <- NULL
+    countsOrig1 <- countsOrig2 <- NULL
     groups <- NULL
     dissFunc = "signed"
     dissFuncPar = NULL
@@ -236,5 +234,5 @@ source(file="C:\\Users\\dexter\\Documents\\VU_UVA\\ResearchProject\\ProjectCode\
 source(file="C:\\Userss\\dexter\\Downloads\\VU_UVA\\ResearchProject\\ProjectCode\\Packages\\NetComi\\R\\transform.R")
 # %%
 NetRes <- myNetAnalysis(network_Nplus_pcor,network_Nminus_pcor)
-netAnalyze(NetRes, 
+netAnalyze(NetRes,
   clustMethod = "cluster_fast_greedy")
