@@ -13,7 +13,7 @@ myNetAnalysis <- function(data, data2,sampleSize = c(118,127),
     simFunc = simFuncPar = NULL
     weighted = TRUE
     adjust = "none" #"lfdr"
-  
+
   
     sparsReslt <- .sparsify(assoMat = assoMat1,
       countMat = NULL,
