@@ -1,9 +1,8 @@
-myNetAnalysis <- function(data, data2,sampleSize = c(118,127), 
-  alpha = c(0.05,0.05), lfdrThresh = c(0.2,0.2), sparsMethod = "t-test")
+myNetAnalysis <- function(assoMat1, assoMat2, sparsMethod = "t-test")
   {
     set.seed(10010)
-    assoMat1 <- data
-    assoMat2 <- data2
+    dataType = assoType = "partialCorr"
+    sampleSize = c(118,127)
     counts1 <- counts2 <- NULL
     countsJointOrig <- NULL
     countsOrig1 <- countsOrig2 <- NULL
@@ -12,32 +11,44 @@ myNetAnalysis <- function(data, data2,sampleSize = c(118,127),
     dissFuncPar = NULL
     simFunc = simFuncPar = NULL
     weighted = TRUE
+    measure = "spieceasi"
+    measurePar = NULL
     adjust = "none" #"lfdr"
-
-  
+    trueNullMethod = "convest"
+    thresh = c(0.3,0.3)
+    alpha = c(0.05,0.05)
+    lfdrThresh = c(0.2,0.2)
+    nboot = 1000L
+    assoBoot = FALSE
+    softThreshType = "signed"
+    softThreshPower = c(NULL,NULL)
+    softThreshCut = c(0.8,0.8)
+    kNeighbor = 3L
+    knnMutual = FALSE
+    seed = 10010
     sparsReslt <- .sparsify(assoMat = assoMat1,
-      countMat = NULL,
+      countMat = counts1,
       sampleSize = sampleSize[1],
-      measure = "spieceasi",
-      measurePar = NULL,
-      assoType = "partialCorr",
+      measure = measure,
+      measurePar = measurePar,
+      assoType = assoType,
       sparsMethod = sparsMethod,
-      thresh = NULL,
+      thresh = thresh[1],
       alpha = alpha[1],
       adjust = adjust,
       lfdrThresh = lfdrThresh[1],
-      trueNullMethod = NULL,
-      nboot = NULL,
-      assoBoot = FALSE,
+      trueNullMethod = trueNullMethod,
+      nboot = nboot,
+      assoBoot = assoBoot,
       cores = 18,
-      softThreshType = "unsigned",
-      softThreshPower = NULL,
-      softThreshCut = NULL,
-      logFile = NULL,
-      kNeighbor = 3L,
-      knnMutual = FALSE,
+      softThreshType = softThreshType,
+      softThreshPower = softThreshType[1],
+      softThreshCut = softThreshCut[1],
+      logFile = "log.txt",
+      kNeighbor = kNeighbor,
+      knnMutual = knnMutual,
       verbose = FALSE,
-      seed = 10010)
+      seed = seed)
 
     assoEst1 <- assoMat1
     assoMat1 <- sparsReslt$assoNew
@@ -67,28 +78,28 @@ myNetAnalysis <- function(data, data2,sampleSize = c(118,127),
     }
 
     sparsReslt <- .sparsify(assoMat = assoMat2,
-            countMat = NULL,
-            sampleSize = sampleSize[2],
-            measure = "spieceasi",
-            measurePar = NULL,
-            assoType = "partialCorr",
-            sparsMethod = sparsMethod,
-            thresh = NULL,
-            alpha = alpha[2],
-            adjust = adjust,
-            lfdrThresh = lfdrThresh[2],
-            trueNullMethod = NULL,
-            nboot = NULL,
-            assoBoot = FALSE,
-            cores = 18,
-            softThreshType = "unsigned",
-            softThreshPower = NULL,
-            softThreshCut = NULL,
-            logFile = NULL,
-            kNeighbor = 3L,
-            knnMutual = FALSE,
-            verbose = FALSE,
-            seed = 10010)
+      countMat = counts2,
+      sampleSize = sampleSize[2],
+      measure = measure,
+      measurePar = measurePar,
+      assoType = assoType,
+      sparsMethod = sparsMethod,
+      thresh = thresh[2],
+      alpha = alpha[2],
+      adjust = adjust,
+      lfdrThresh = lfdrThresh[2],
+      trueNullMethod = trueNullMethod,
+      nboot = nboot,
+      assoBoot = assoBoot,
+      cores = 18,
+      softThreshType = softThreshType,
+      softThreshPower = softThreshType[2],
+      softThreshCut = softThreshCut[2],
+      logFile = "log.txt",
+      kNeighbor = kNeighbor,
+      knnMutual = knnMutual,
+      verbose = FALSE,
+      seed = seed)
 
     assoEst2 <- assoMat2
     assoMat2 <- sparsReslt$assoNew
@@ -182,10 +193,10 @@ myNetAnalysis <- function(data, data2,sampleSize = c(118,127),
       })
     }
 
-    if (isempty1 && verbose > 0) {
+    if (isempty1) {
       message("\nNetwork 1 has no edges.")
     }
-    if (isempty2 && verbose > 0) {
+    if (isempty2) {
       message("Network 2 has no edges.")
     }
 
@@ -222,17 +233,88 @@ myNetAnalysis <- function(data, data2,sampleSize = c(118,127),
     output$sampleSize <- sampleSize
     output$softThreshPower <- list(power1 = power1, 
       power2 = power2) # calculated power
-
+    output$assoType <- assoType
+    output$parameters <- list(
+      dataType = dataType,
+      # group = group,
+      # filtTax = filtTax,
+      # filtTaxPar = filtTaxPar,
+      # filtSamp = filtSamp,
+      # filtSampPar = filtSampPar,
+      # jointPrepro = jointPrepro,
+      # zeroMethod = zeroMethod,
+      # zeroPar = zeroPar,
+      # needfrac = needfrac,
+      # needint = needint,
+      # normMethod = normMethod,
+      # normPar = normPar,
+      measure = measure,
+      measurePar = measurePar,
+      sparsMethod = sparsMethod,
+      thresh = thresh,
+      adjust = adjust,
+      trueNullMethod = trueNullMethod,
+      alpha = alpha,
+      lfdrThresh = lfdrThresh,
+      nboot = nboot,
+      softThreshType = softThreshType,
+      softThreshPower = softThreshPower,
+      softThreshCut = softThreshCut,
+      kNeighbor = kNeighbor,
+      knnMutual = knnMutual,
+      dissFunc = dissFunc,
+      dissFuncPar = dissFuncPar,
+      simFunc = simFunc,
+      simFuncPar = simFuncPar,
+      # scaleDiss = scaleDiss,
+      weighted = weighted,
+      sampleSize = sampleSize)
     output$call = match.call()
     output$twoNets <- TRUE
     class(output) <- "microNet"
     return(output)
 }
 # %%
-# load(file = "DataImage\\network_results_stabENG.RData")
-source(file="C:\\Users\\dexter\\Documents\\VU_UVA\\ResearchProject\\ProjectCode\\Packages\\NetComi\\R\\dot-sparsify.R")
-source(file="C:\\Userss\\dexter\\Downloads\\VU_UVA\\ResearchProject\\ProjectCode\\Packages\\NetComi\\R\\transform.R")
+library(NetCoMi)
+load(file = "DataImage\\network_results_stabENG.RData")
+source(file="Packages\\NetComi\\R\\dot-sparsify.R")
+source(file="Packages\\NetCoMi\\R\\transform.R")
 # %%
-NetRes <- myNetAnalysis(network_Nplus_pcor,network_Nminus_pcor)
-netAnalyze(NetRes,
-  clustMethod = "cluster_fast_greedy")
+NetCon <- myNetAnalysis(network_Nplus_pcor,network_Nminus_pcor)
+NetRes <- netAnalyze(NetCon, clustMethod = "cluster_fast_greedy")
+NetSum <- summary(NetRes)
+
+# %% GCM heatmap plot
+pdf(file="Plots/NetCoMi/GCM_heatmap_plot.pdf")
+plotHeat(mat = NetRes$graphletLCC$gcm1,
+  pmat = NetRes$graphletLCC$pAdjust1,
+  type = "mixed",
+  title = "GCM", 
+  colorLim = c(-1, 1),
+  mar = c(2, 0, 2, 0))
+graphics::rect(xleft   = c( 0.5,  1.5, 4.5,  7.5),# Add rectangles highlighting the four types of orbits
+        ybottom = c(11.5,  7.5, 4.5,  0.5),
+        xright  = c( 1.5,  4.5, 7.5, 11.5),
+        ytop    = c(10.5, 10.5, 7.5,  4.5),
+        lwd = 2, xpd = NA)
+
+text(6, -0.2, xpd = NA, 
+"Significance codes:  ***: 0.001;  **: 0.01;  *: 0.05")
+dev.off()
+# %%Visualizing the network
+pdf(file="Plots/NetCoMi/network_plot.pdf",width = 50, height = 30)
+p <- plot(NetRes, 
+  nodeColor = "cluster", 
+  nodeSize = "eigenvector",
+  title1 = "Network on OTU level", 
+  showTitle = TRUE,
+  cexTitle = 5)
+legend(0.7, 1.1, cex = 5, title = "estimated association:",
+legend = c("+","-"), lty = 2, lwd = 5, col = c("#009900","red"), 
+bty = "n", horiz = TRUE)
+dev.off()
+
+# %% diff net
+diff_season <- diffnet(NetCon,n1 = 118,n2 = 127,
+  diffMethod = "fisherTest", 
+  adjust = "none")
