@@ -1,4 +1,3 @@
-source("Packages\\MyENG.r")
 library(foreach)
 library(doParallel)
 library(parallel)
