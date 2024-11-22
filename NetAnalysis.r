@@ -16,7 +16,7 @@ myNetAnalysis <- function(assoMat1, assoMat2, sparsMethod = "t-test")
     adjust = "none" #"lfdr"
     trueNullMethod = "convest"
     thresh = c(0.3,0.3)
-    alpha = c(0.05,0.05)
+    alpha = c(0.05,0.05) # p-value 0.1
     lfdrThresh = c(0.2,0.2)
     nboot = 1000L
     assoBoot = FALSE
@@ -318,3 +318,9 @@ dev.off()
 diff_season <- diffnet(NetCon,n1 = 118,n2 = 127,
   diffMethod = "fisherTest", 
   adjust = "none")
+
+# %% net compare
+tmp = summary(NetRes, 
+  groupNames = c("Pos", "Neg"),
+  showCentr = c("degree", "between", "closeness"), 
+  numbNodes = 5)
