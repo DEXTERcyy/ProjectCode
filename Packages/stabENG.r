@@ -47,8 +47,7 @@ stabENG = function(Y,var.thresh = 0.1, subsample.ratio = NULL, labels = NULL,
                                    lambda1.max=lambda1.max, lambda2=lambda2.init,verbose=verbose,parallelize=parallelize,nCores=nCores)
   est.lambda2 = stabENG_select_lambda2_eBIC(Y,labels=labels,weights=weights,
                                         nlambda2=nlambda2,lambda2.min=lambda2.min,lambda2.max=lambda2.max,
-                                        lambda1=est.lambda1$opt.lambda1,gamma=ebic.gamma,verbose=verbose,parallelize=parallelize,
-                                        nCores=nCores)
+                                        lambda1=est.lambda1$opt.lambda1,gamma=ebic.gamma,verbose=verbose)
   est$opt.ebic = est.lambda2$opt.ebic
   est$ebic.vals = est.lambda2$ebic.vals
   est$lambda2s = est.lambda2$lambda2s
@@ -77,7 +76,7 @@ stabENG = function(Y,var.thresh = 0.1, subsample.ratio = NULL, labels = NULL,
 }
 
 stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1, stars.subsample.ratio = NULL,rep.num = 20,
-                                  nlambda1=20,lambda1.min,lambda1.max, lambda2,verbose,parallelize=F,nCores=nCores){
+                                  nlambda1=20,lambda1.min,lambda1.max, lambda2,verbose,parallelize,nCores){
   K = length(Y)
   n.vals = unlist(lapply(Y,nrow))
   p = ncol(Y[[1]])
@@ -193,8 +192,7 @@ stabENG_select_lambda1_parallel = function(Y,labels, rep.num,n.vals,stars.subsam
 }
 
 stabENG_select_lambda2_eBIC = function(Y,labels, weights="equal",
-                                       nlambda2=30,lambda2.min,lambda2.max, lambda1=NULL,gamma=NULL,verbose=F,
-                                       parallelize=F,nCores=nCores){
+                                       nlambda2=30,lambda2.min,lambda2.max, lambda1=NULL,gamma=NULL,verbose){
   ebic.vals = rep(0,nlambda2)
   lambda2.vals = seq(lambda2.min,lambda2.max,length.out= nlambda2)
   n.vals = unlist(lapply(Y,nrow))

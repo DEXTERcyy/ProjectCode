@@ -40,6 +40,7 @@ source("Packages\\stabENG.r")
 source("Packages\\MyENG.r")
 rawdata <- readRDS("data\\phyloseqDavarHoagIntersect1009.RDS")
 otu_Ab <- as.data.frame(t(otu_table(rawdata)))
+otu_Ab <- otu_Ab[, sample(ncol(otu_Ab), size = ncol(otu_Ab) / 2)]
 sam_info <- as.data.frame(sample_data(rawdata))
 otu_tax <- as.data.frame(tax_table(rawdata))
 shared_otu <- colnames(otu_Ab)
@@ -48,13 +49,14 @@ otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCo
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
 
-# %% 
 source("Packages\\stabENG.r")
 network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 20,
   nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-  lambda2.init=0.01,ebic.gamma=0.2)
+  lambda2.init=0.01,ebic.gamma=0.2, parallelize=T)
 network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
 diag(network_Nplus) = diag(network_Nminus) <- 0
 network_Nplus_pcor <- network_results$opt.fit.pcor$Nplus
 network_Nminus_pcor <- network_results$opt.fit.pcor$Nminus
+
+save.image("half_big_network_results_stabENG.RData")
