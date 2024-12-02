@@ -134,6 +134,7 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1,
   else{
     cl <- parallel::makeCluster(nCores)
     doParallel::registerDoParallel(cl)
+    parallel::clusterEvalQ(cl,Sys.info())
     res.list = foreach::foreach(i=1:rep.num,
       .export = c('stabENG_select_lambda1_parallel', 'preprocess_and_estimate_network', 
       'myENG','myadmm.iters','myadmm.iters.unconnected','flsa2','flsa.general','soft',

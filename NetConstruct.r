@@ -38,6 +38,7 @@ library(RColorBrewer)
 library(dplyr)
 source("Packages\\stabENG.r")
 source("Packages\\MyENG.r")
+
 rawdata <- readRDS("data\\n_starvation.rds")
 otu_Ab <- as.data.frame(t(otu_table(rawdata)))
 sam_info <- as.data.frame(sample_data(rawdata))
@@ -48,11 +49,9 @@ otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCo
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
 
-# %% 
-source("Packages\\stabENG.r")
 network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 20,
   nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-  lambda2.init=0.01,ebic.gamma=0.2, parallelize=T, nCores = 4)
+  lambda2.init=0.01,ebic.gamma=0.2, parallelize=T)
 network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
 diag(network_Nplus) = diag(network_Nminus) <- 0

@@ -39,9 +39,10 @@ library(dplyr)
 source("Packages\\stabENG.r")
 source("Packages\\MyENG.r")
 source("Packages\\stabENG.r")
-rawdata <- readRDS("data\\phyloseqDavarHoagIntersect1009.RDS")
-otu_Ab <- as.data.frame(t(otu_table(rawdata)))
-otu_Ab <- otu_Ab[, sample(ncol(otu_Ab), size = ncol(otu_Ab) / 2)]
+rawdata <- readRDS("data\\DavarData1_substrate_phyloseq_1226_final_filtered.RDS")
+otu_Ab <- filter_taxa(otu_table(rawdata), function(x) sum(x >= 5) >= (0.25*length(x)), TRUE)
+otu_Ab <- as.data.frame(t(otu_Ab))
+#otu_Ab <- otu_Ab[, sample(ncol(otu_Ab), size = ncol(otu_Ab) / 2)]
 sam_info <- as.data.frame(sample_data(rawdata))
 otu_tax <- as.data.frame(tax_table(rawdata))
 shared_otu <- colnames(otu_Ab)
@@ -50,21 +51,22 @@ otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCo
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
 
+# %%
 network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 20,
   nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-  lambda2.init=0.01,ebic.gamma=0.2, parallelize=T)
+  lambda2.init=0.01,ebic.gamma=0.2, parallelize=T, nCores = 16)
 network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
 diag(network_Nplus) = diag(network_Nminus) <- 0
 network_Nplus_pcor <- network_results$opt.fit.pcor$Nplus
 network_Nminus_pcor <- network_results$opt.fit.pcor$Nminus
 
-save.image("DataImage\\half_big_network_results_stabENG.RData")
+save.image("DataImage\\big1226_network_results_stabENG.RData")
 
 # %% Plot network on Phylum level
-load(file = "network_results_stabENG.RData")
+load(file = "DataImage\\big1226_network_results_stabENG.RData")
 Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
-png(filename="Plots/BigData/network_Nplus_Phylum_Stab.png")
+png(filename="Plots/BigData/big1226_network_Nplus_Phylum_Stab.png")
 qgraph::qgraph(network_Nplus, 
   layout = "circle",
   edge.color = ifelse(network_Nplus > 0, "blue", "red"),
@@ -72,7 +74,7 @@ qgraph::qgraph(network_Nplus,
   groups = Phylum_groups)
 dev.off()
 
-png(filename="Plots/BigData/network_Nminus_Phylum_Stab.png")
+png(filename="Plots/BigData/big1226_network_Nminus_Phylum_Stab.png")
 qgraph::qgraph(network_Nminus, 
   layout = "circle",
   edge.color = ifelse(network_Nminus > 0, "blue", "red"),
@@ -145,7 +147,7 @@ ggraph::ggraph(mygraph, layout = 'dendrogram', circular = TRUE) +
     plot.margin=unit(c(0,0,0,0),"cm"),
   ) +
   expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
-ggsave(filename="Plots/BigData/Nplus_plot_circularized.pdf", width = 12, height = 12, units = "in")
+ggsave(filename="Plots/BigData/big1226_Nplus_plot_circularized.pdf", width = 12, height = 12, units = "in")
 
 # Visualize Edge weights
 cor_values_Nplus <- as.vector(network_Nplus)
