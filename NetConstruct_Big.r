@@ -40,24 +40,35 @@ source("Packages\\stabENG.r")
 source("Packages\\MyENG.r")
 source("Packages\\stabENG.r")
 rawdata <- readRDS("data\\DavarData1_substrate_phyloseq_1226_final_filtered.RDS")
-otu_Ab <- filter_taxa(otu_table(rawdata), function(x) sum(x >= 5) >= (0.25*length(x)), TRUE)
-otu_Ab <- as.data.frame(t(otu_Ab))
-#otu_Ab <- otu_Ab[, sample(ncol(otu_Ab), size = ncol(otu_Ab) / 2)]
+otu_raw <- otu_table(rawdata)
+otu_RA <- transform_sample_counts(otu_raw, function(x) x / sum(x) )
+otu_RA <- filter_taxa(otu_RA, function(x) mean(x) > 1e-3, TRUE)
+shared_otu <- rownames(otu_RA)
+otu_Ab <- as.data.frame(t(otu_raw[shared_otu,]))
 sam_info <- as.data.frame(sample_data(rawdata))
 otu_tax <- as.data.frame(tax_table(rawdata))
-shared_otu <- colnames(otu_Ab)
+
 # split otu_Ab by meta
-otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="plusN",]),]
-otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
+#timestamps <- unique(sam_info$Days)
+otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="plusN" & sam_info$Days == 4,]),]
+otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN" & sam_info$Days == 4,]),]
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
 
 # %%
 network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 20,
   nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-  lambda2.init=0.01,ebic.gamma=0.2, parallelize=T, nCores = 16)
+  lambda2.init=0.01,ebic.gamma=0.2, parallelize=T)
 network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
 diag(network_Nplus) = diag(network_Nminus) <- 0
+network_list <- list(network = list(Nplus = network_Nplus, Nminus = network_Nminus))
+# %%
+GroupNetworkBoot(data_list = data_list, groupNetwork = network_list,
+  nboots = 10, bootSeed = 1234, ncores = 16)
+
+# %%
+# network_Nplus[abs(network_Nplus) < 0.01] <- 0
+# network_Nminus[abs(network_Nminus) < 0.01] <- 0
 network_Nplus_pcor <- network_results$opt.fit.pcor$Nplus
 network_Nminus_pcor <- network_results$opt.fit.pcor$Nminus
 

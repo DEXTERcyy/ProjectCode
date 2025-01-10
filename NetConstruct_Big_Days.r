@@ -2,28 +2,32 @@
 library(phyloseq)
 library(SPRING)
 library(SpiecEasi)
-library(qgraph)
-library(igraph)
-library(caret)     # For confusionMatrix function
-library(pROC)      # For ROC and AUC calculation
-library(MLmetrics) # For F1 Score, MCC
+library(caret)
+library(pROC)
+library(MLmetrics)
 library(ggplot2)
 library(tidyr)
 library(ggraph)
 library(tidyverse)
 library(RColorBrewer)
 library(dplyr)
-source("stabENG.r")
-rawdata <- readRDS("data//n_starvation.rds")
-otu_Ab <- as.data.frame(t(otu_table(rawdata)))
+source("Packages\\stabENG.r")
+source("Packages\\MyENG.r")
+source("Packages\\stabENG.r")
+rawdata <- readRDS("data\\DavarData1_substrate_phyloseq_1226_final_filtered.RDS")
+otu_raw <- otu_table(rawdata)
+otu_RA <- transform_sample_counts(otu_raw, function(x) x / sum(x) )
+otu_RA <- filter_taxa(otu_RA, function(x) mean(x) > 1e-3, TRUE)
+shared_otu <- rownames(otu_RA)
+otu_Ab <- as.data.frame(t(otu_raw[shared_otu,]))
 sam_info <- as.data.frame(sample_data(rawdata))
 otu_tax <- as.data.frame(tax_table(rawdata))
-shared_otu <- colnames(otu_Ab)
-# split otu_Ab by meta
+
+# %%split otu_Ab by condition group
 otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="plusN",]),]
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
-# by meta and Days
+# by Group and Days
 timestamps <- unique(sam_info$Days)
 otu_Ab_Nplus_times <- list()
 otu_Ab_Nminus_times <- list()
@@ -36,6 +40,7 @@ for (i in timestamps)
       rownames(sam_info[sam_info$growthCondition=="minusN" & sam_info$Days == i,]),]
     data_list_times[[i]] <- list(Nplus = otu_Ab_Nplus_times[[i]], Nminus = otu_Ab_Nminus_times[[i]])
   }
+save.image("DataImage\\big1226_Days_network_results_Big_Days.RData")
 # %%
 for (i in timestamps)
 {
@@ -45,11 +50,13 @@ for (i in timestamps)
     lambda2.init=0.01,ebic.gamma=0.6)
   network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
   network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
+  # filter edge sparsity
+  network_Nplus[abs(network_Nplus) < 0.01] <- 0
+  network_Nminus[abs(network_Nminus) < 0.01] <- 0
   diag(network_Nplus) = diag(network_Nminus) = 0
-  
   # %% Plot network on Phylum level
   Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
-  png(filename=paste0("Plots/byDays/Days_",i,"_network_Nplus_Phylum_Stab_vsized.png"))
+  png(filename=paste0("Plots/byDays/Days_",i,"_Big_Network_Nplus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_Nplus, 
     layout = "circle",
     edge.color = ifelse(network_Nplus > 0, "blue", "red"),
@@ -58,7 +65,7 @@ for (i in timestamps)
     groups = Phylum_groups)
   dev.off()
   # %%
-  png(filename=paste0("Plots/byDays/Days_",i,"_network_Nminus_Phylum_Stab_vsized.png"))
+  png(filename=paste0("Plots/byDays/Days_",i,"_Big_Network_Nminus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_Nminus, 
     layout = "circle",
     edge.color = ifelse(network_Nminus > 0, "blue", "red"),
@@ -132,7 +139,7 @@ for (i in timestamps)
       plot.margin=unit(c(0,0,0,0),"cm"),
     ) +
     expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
-  ggsave(filename=paste0("Plots/byDays/Days_",i,"_Nplus_plot_circularized.pdf"), width = 12, height = 12, units = "in")
+  ggsave(filename=paste0("Plots/byDays/Days_",i,"_Big_Nplus_Filtered_plot_circularized.pdf"), width = 12, height = 12, units = "in")
 
   # %%Visualize Edge weights
   cor_values_Nplus <- as.vector(network_Nplus)
@@ -260,7 +267,7 @@ for (i in timestamps)
         x = "Matrix ID",
         y = metric_name) +
       theme_bw()
-      ggsave(filename = paste0("Plots/byDays/Days_",i,"_", metric_name, "_barplot.png"), p)
+      ggsave(filename = paste0("Plots/byDays/Days_Big_Filtered_",i,"_", metric_name, "_barplot.png"), p)
   }
 
   # %% boxplot
@@ -273,8 +280,6 @@ for (i in timestamps)
           x = "Nitrogen Condition",
           y = metric_name) +
       theme_bw()
-    ggsave(filename = paste0("Plots/byDays/Days_",i,"_", metric_name, "_boxplot.png"), p)
+    ggsave(filename = paste0("Plots/byDays/Days_Big_Filtered_",i,"_", metric_name, "_boxplot.png"), p)
   }
 }
-#save.image("network_results_Days.RData")
-#load(file = "network_results_Days.RData")
