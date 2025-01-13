@@ -40,23 +40,24 @@ for (i in timestamps)
       rownames(sam_info[sam_info$growthCondition=="minusN" & sam_info$Days == i,]),]
     data_list_times[[i]] <- list(Nplus = otu_Ab_Nplus_times[[i]], Nminus = otu_Ab_Nminus_times[[i]])
   }
-save.image("DataImage\\big1226_Days_network_results_Big_Days.RData")
+save.image("DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
 # %%
 for (i in timestamps)
 {
   data_list <- data_list_times[[i]]
-  network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 20,
+  cat('Calculating network on day ',i,'\n')
+  network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 25,
     nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
     lambda2.init=0.01,ebic.gamma=0.6)
   network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
   network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
   # filter edge sparsity
-  network_Nplus[abs(network_Nplus) < 0.01] <- 0
-  network_Nminus[abs(network_Nminus) < 0.01] <- 0
-  diag(network_Nplus) = diag(network_Nminus) = 0
+  network_Nplus[abs(network_Nplus) < 0.1] <- 0
+  network_Nminus[abs(network_Nminus) < 0.1] <- 0
+  diag(network_Nplus) = diag(network_Nminus) <- 0
   # %% Plot network on Phylum level
   Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
-  png(filename=paste0("Plots/byDays/Days_",i,"_Big_Network_Nplus_Phylum_Stab_Filtered_vsized.png"))
+  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_Network_Nplus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_Nplus, 
     layout = "circle",
     edge.color = ifelse(network_Nplus > 0, "blue", "red"),
@@ -65,7 +66,7 @@ for (i in timestamps)
     groups = Phylum_groups)
   dev.off()
   # %%
-  png(filename=paste0("Plots/byDays/Days_",i,"_Big_Network_Nminus_Phylum_Stab_Filtered_vsized.png"))
+  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_Network_Nminus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_Nminus, 
     layout = "circle",
     edge.color = ifelse(network_Nminus > 0, "blue", "red"),
@@ -139,7 +140,7 @@ for (i in timestamps)
       plot.margin=unit(c(0,0,0,0),"cm"),
     ) +
     expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
-  ggsave(filename=paste0("Plots/byDays/Days_",i,"_Big_Nplus_Filtered_plot_circularized.pdf"), width = 12, height = 12, units = "in")
+  ggsave(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_Nplus_Filtered_plot_circularized.pdf"), width = 12, height = 12, units = "in")
 
   # %%Visualize Edge weights
   cor_values_Nplus <- as.vector(network_Nplus)
@@ -168,7 +169,7 @@ for (i in timestamps)
       X <- SpiecEasi::synth_comm_from_counts(dat, mar = 2, distr = 'zinegbin', Sigma = Cor, n = nrow(dat))
       return(X)
     }
-
+  cat('Synthesize simulation data on day ',i,'\n')
   Sim_list <- list()
   for (j in 1:5)
     {
@@ -177,10 +178,17 @@ for (i in timestamps)
         Nminus = synthesize_scaled_data(otu_Ab_Nminus, network_Nminus)
       )
     }
+  cat('Calculate simulation data network on day ',i,'\n')
   Res_sim <- list()
   for (j in 1:5)
     {
-      Res_sim[[j]] <- stabENG(Sim_list[[j]], labels = shared_otu)
+      Res_sim[[j]] <- stabENG(Sim_list[[j]], labels = shared_otu, var.thresh = 0.1, rep.num = 25,
+        nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
+        lambda2.init=0.01,ebic.gamma=0.6)
+      # filter edge sparsity
+      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.1] <- 0
+      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.1] <- 0
+      diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
     }
   Sim_adj <- list()
   for (j in 1:5)
@@ -236,7 +244,7 @@ for (i in timestamps)
       return(list(TPR = tpr, FPR = fpr, Precision = precision, Recall = recall,
                   F1 = f1, AUC = auc, MCC = mcc))
     }
-
+  cat('Calculate confusion matrices on day ',i,'\n')
   confusion_results <- lapply(1:5, function(j)
     {
       true_adj_Nplus <- (network_Nplus !=0)*1
@@ -267,7 +275,7 @@ for (i in timestamps)
         x = "Matrix ID",
         y = metric_name) +
       theme_bw()
-      ggsave(filename = paste0("Plots/byDays/Days_Big_Filtered_",i,"_", metric_name, "_barplot.png"), p)
+      ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_",i,"_", metric_name, "_barplot.png"), p)
   }
 
   # %% boxplot
@@ -280,6 +288,6 @@ for (i in timestamps)
           x = "Nitrogen Condition",
           y = metric_name) +
       theme_bw()
-    ggsave(filename = paste0("Plots/byDays/Days_Big_Filtered_",i,"_", metric_name, "_boxplot.png"), p)
+    ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_",i,"_", metric_name, "_boxplot.png"), p)
   }
 }

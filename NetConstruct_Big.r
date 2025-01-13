@@ -62,20 +62,21 @@ network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
 diag(network_Nplus) = diag(network_Nminus) <- 0
 network_list <- list(network = list(Nplus = network_Nplus, Nminus = network_Nminus))
-# %%
-GroupNetworkBoot(data_list = data_list, groupNetwork = network_list,
-  nboots = 10, bootSeed = 1234, ncores = 16)
 
-# %%
-# network_Nplus[abs(network_Nplus) < 0.01] <- 0
-# network_Nminus[abs(network_Nminus) < 0.01] <- 0
-network_Nplus_pcor <- network_results$opt.fit.pcor$Nplus
-network_Nminus_pcor <- network_results$opt.fit.pcor$Nminus
+# %% GNB filter
+# GroupNetworkBoot(data_list = data_list, groupNetwork = network_list,
+#   nboots = 10, bootSeed = 1234, ncores = 16)
 
-save.image("DataImage\\big1226_network_results_stabENG.RData")
+# %% precision matrix filter
+network_Nplus[abs(network_Nplus) < 0.1] <- 0
+network_Nminus[abs(network_Nminus) < 0.1] <- 0
+# network_Nplus_pcor <- network_results$opt.fit.pcor$Nplus
+# network_Nminus_pcor <- network_results$opt.fit.pcor$Nminus
+
+save.image("DataImage\\big1226_network_results_stabENG_Big_filtered.RData")
 
 # %% Plot network on Phylum level
-load(file = "DataImage\\big1226_network_results_stabENG.RData")
+# load(file = "DataImage\\big1226_network_results_stabENG.RData")
 Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
 png(filename="Plots/BigData/big1226_network_Nplus_Phylum_Stab.png")
 qgraph::qgraph(network_Nplus, 
@@ -84,7 +85,7 @@ qgraph::qgraph(network_Nplus,
   title = "Stab Network Nplus by Phylum",
   groups = Phylum_groups)
 dev.off()
-
+# %%
 png(filename="Plots/BigData/big1226_network_Nminus_Phylum_Stab.png")
 qgraph::qgraph(network_Nminus, 
   layout = "circle",

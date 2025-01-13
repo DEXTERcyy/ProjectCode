@@ -4,9 +4,9 @@ library(parallel)
 library(mixedCCA)
 library(SPRING)
 library(stabJGL)
-stabENG = function(Y,var.thresh = 0.1, subsample.ratio = NULL, labels = NULL,
-                   rep.num = 20,  nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,lambda2.init=0.01,
-                   ebic.gamma=0.2,verbose=T, retune.lambda1=F,parallelize=T,nCores,weights="equal"){
+stabENG = function(Y,var.thresh, subsample.ratio = NULL, labels = NULL,
+                   rep.num,  nlambda1,lambda1.min,lambda1.max,nlambda2,lambda2.min,lambda2.max,lambda2.init,
+                   ebic.gamma,verbose=T, retune.lambda1=F,parallelize=T,nCores,weights="equal"){
 
   if (length(unique(unlist(lapply(Y, ncol)))) !=1) {
     stop("dimension (no of variables) not equal for all data sets.")
@@ -34,7 +34,7 @@ stabENG = function(Y,var.thresh = 0.1, subsample.ratio = NULL, labels = NULL,
   }
   if (parallelize) {
     if (missing(nCores)) {
-      nCores = parallel::detectCores() - 1
+      nCores = parallel::detectCores() - 2
     } else if (nCores < 2) stop("if method is to be run in parallel, at least two threads should be initiated. Try nCores=2. \n")
   }
   if (rep.num < 1) {
@@ -75,8 +75,8 @@ stabENG = function(Y,var.thresh = 0.1, subsample.ratio = NULL, labels = NULL,
   return(est)
 }
 
-stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1, stars.subsample.ratio = NULL,rep.num = 20,
-                                  nlambda1=20,lambda1.min,lambda1.max, lambda2,verbose,parallelize,nCores){
+stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh, stars.subsample.ratio = NULL,rep.num,
+                                  nlambda1,lambda1.min,lambda1.max, lambda2,verbose,parallelize,nCores){
   K = length(Y)
   n.vals = unlist(lapply(Y,nrow))
   p = ncol(Y[[1]])
@@ -84,7 +84,6 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1,
   seeds=sample(1:1000,rep.num)
   est=list()
   lambda1s=seq(lambda1.max,lambda1.min,length.out=nlambda1)
-  if(verbose) cat('Tuning lambda1... \n ')
   if(is.null(stars.subsample.ratio))
   {
     for(k in 1:K){
@@ -105,6 +104,7 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1,
     est$merge[[i]] = array(0,dim=c(K,p,p))
   }
   if(!parallelize){
+    if(verbose) cat('Tuning lambda1 unparallelized... \n ')
     for(i in 1:rep.num)
     {
       Y.sample = list()
@@ -132,6 +132,7 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1,
     }
   }
   else{
+    if(verbose) cat('Tuning lambda1 parallelly... \n ')
     cl <- parallel::makeCluster(nCores)
     doParallel::registerDoParallel(cl)
     parallel::clusterEvalQ(cl,Sys.info())
@@ -142,7 +143,7 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1,
       .packages = c("stabJGL","igraph","qgraph")) %dopar% {
       stabENG_select_lambda1_parallel(Y,labels=labels, rep.num=rep.num,n.vals=n.vals,stars.subsample.ratios=stars.subsample.ratios,
                                       lambda1s=lambda1s,lambda2=lambda2,penalize.diagonal = penalize.diagonal,
-                                      seed=seeds[i], array.list=est$merge)
+                                      seed=seeds[i], array.list=est$merge, verbose=verbose)
     }
     parallel::stopCluster(cl)
     for(j in 1:length(lambda1s)){
@@ -165,12 +166,12 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh = 0.1,
   est$opt.fit = preprocess_and_estimate_network(Y,labels = labels, lambda1 = est$opt.lambda1, lambda2 = lambda2)$prec
   est$opt.sparsities = unlist(lapply(est$opt.fit,sparsity))
   return(est)
-
+  cat('Tuning lambda1 done. \n')
 }
 
 stabENG_select_lambda1_parallel = function(Y,labels, rep.num,n.vals,stars.subsample.ratios,
                                            lambda1s,lambda2,penalize.diagonal,
-                                           seed,array.list){
+                                           seed,array.list,verbose){
   set.seed(seed)
   Y.sample = list()
   K=length(Y)
@@ -193,7 +194,7 @@ stabENG_select_lambda1_parallel = function(Y,labels, rep.num,n.vals,stars.subsam
 }
 
 stabENG_select_lambda2_eBIC = function(Y,labels, weights="equal",
-                                       nlambda2=30,lambda2.min,lambda2.max, lambda1=NULL,gamma=NULL,verbose){
+                                       nlambda2,lambda2.min,lambda2.max, lambda1=NULL,gamma=NULL,verbose){
   ebic.vals = rep(0,nlambda2)
   lambda2.vals = seq(lambda2.min,lambda2.max,length.out= nlambda2)
   n.vals = unlist(lapply(Y,nrow))
@@ -203,12 +204,13 @@ stabENG_select_lambda2_eBIC = function(Y,labels, weights="equal",
   for (i in 1:nlambda2){
     mods.lam2[[i]] = preprocess_and_estimate_network(Y,labels = labels, lambda1 = lambda1, lambda2 = lambda2.vals[i])$prec
     ebic.vals[i] = stabJGL::eBIC_adapted(mods.lam2[[i]],sample.cov=sample.cov,n.vals=n.vals,gamma=gamma)
-
-    if (verbose) {
-      done <- round(100 * i / nlambda2)
-      done.next <- round(100 * (i + 1) / nlambda2)
-      if (i == nlambda2| (done %% 5) == 0 & (done.next %% 5) != 0) cat('Tuning lambda2: ', done, ' % done \n')
-    }
+    done <- round(100 * i / nlambda2)
+    cat('Tuning lambda2: ', done, ' % done \n')
+    # if (verbose) {
+    #   done <- round(100 * i / nlambda2)
+    #   done.next <- round(100 * (i + 1) / nlambda2)
+    #   if (i == nlambda2| (done %% 5) == 0 & (done.next %% 5) != 0) cat('Tuning lambda2: ', done, ' % done \n')
+    # }
   }
   opt.ind = which.min(ebic.vals)
   res=list(opt.fit=mods.lam2[[opt.ind]], opt.lambda1 = lambda1, opt.lambda2 = lambda2.vals[opt.ind], opt.index = opt.ind,opt.ebic=ebic.vals[opt.ind],
