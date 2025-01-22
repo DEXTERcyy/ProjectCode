@@ -1,3 +1,4 @@
+# %%
 myNetAnalysis <- function(assoMat1, assoMat2, sparsMethod = "t-test")
   {
     set.seed(10010)

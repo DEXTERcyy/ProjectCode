@@ -186,8 +186,8 @@ for (i in timestamps)
         nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
         lambda2.init=0.01,ebic.gamma=0.6)
       # filter edge sparsity
-      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.1] <- 0
-      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.1] <- 0
+      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.01] <- 0
+      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.01] <- 0
       diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
     }
   Sim_adj <- list()
