@@ -50,8 +50,8 @@ network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep
 network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
 # filter edge sparsity
-network_Nplus[abs(network_Nplus) < 0.1] <- 0
-network_Nminus[abs(network_Nminus) < 0.1] <- 0
+network_Nplus[abs(network_Nplus) < 0.075] <- 0
+network_Nminus[abs(network_Nminus) < 0.075] <- 0
 diag(network_Nplus) = diag(network_Nminus) <- 0
 # %% Plot network on Phylum level
 Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
@@ -184,8 +184,8 @@ for (j in 1:5)
       nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
       lambda2.init=0.01,ebic.gamma=0.6)
     # filter edge sparsity
-    Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.01] <- 0
-    Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.01] <- 0
+    # Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.01] <- 0
+    # Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.01] <- 0
     diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
   }
 Sim_adj <- list()
@@ -217,10 +217,10 @@ calculate_metrics <- function(true_adj, sim_adj)
   
     # Confusion matrix
     cm <- confusionMatrix(as.factor(sim_edges), as.factor(true_edges), positive = "1")
-    tn <- as.numeric(cm$table[1,1]) #true negatives
-    fn <- as.numeric(cm$table[1,2]) #false negatives
-    fp <- as.numeric(cm$table[2,1]) #false positives
-    tp <- as.numeric(cm$table[2,2]) #true positives
+    tp <- as.numeric(cm$table[2,2])
+    fp <- as.numeric(cm$table[1,2])
+    fn <- as.numeric(cm$table[2,1])
+    tn <- as.numeric(cm$table[1,1])
   
     # Calculate TPR, FPR, Precision, Recall
     tpr <- tp / (tp + fn)  # Sensitivity / Recall
@@ -241,7 +241,7 @@ calculate_metrics <- function(true_adj, sim_adj)
     # Return metrics as a list
     return(list(TPR = tpr, FPR = fpr, Precision = precision, Recall = recall,
                 F1 = f1, AUC = auc, MCC = mcc))
-  }
+}
 cat('Calculate confusion matrices on day ',i,'\n')
 confusion_results <- lapply(1:5, function(j)
   {
