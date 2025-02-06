@@ -277,7 +277,7 @@ myNetAnalysis <- function(assoMat1, assoMat2, sparsMethod = "t-test")
 }
 # %%
 library(NetCoMi)
-load(file = "DataImage\\half_big_network_results_stabENG.RData")
+load(file = "DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
 source(file="Packages\\NetComi\\R\\dot-sparsify.R")
 source(file="Packages\\NetCoMi\\R\\transform.R")
 # %%

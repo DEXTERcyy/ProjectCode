@@ -40,8 +40,9 @@ for (i in timestamps)
       rownames(sam_info[sam_info$growthCondition=="minusN" & sam_info$Days == i,]),]
     data_list_times[[i]] <- list(Nplus = otu_Ab_Nplus_times[[i]], Nminus = otu_Ab_Nminus_times[[i]])
   }
-save.image("DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
+#save.image("DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
 # %%
+network_list <- list()
 for (i in timestamps)
 {
   data_list <- data_list_times[[i]]
@@ -49,33 +50,33 @@ for (i in timestamps)
   network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 25,
     nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
     lambda2.init=0.01,ebic.gamma=0.6)
-  network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
-  network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
+  network_list[[i]]$Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
+  network_list[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
   # filter edge sparsity
-  network_Nplus[abs(network_Nplus) < 0.1] <- 0
-  network_Nminus[abs(network_Nminus) < 0.1] <- 0
-  diag(network_Nplus) = diag(network_Nminus) <- 0
+  network_list[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.01] <- 0
+  network_list[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.01] <- 0
+  diag(network_list[[i]]$Nplus) = diag(network_list[[i]]$Nminus) <- 0
   # %% Plot network on Phylum level
-  Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
-  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_Network_Nplus_Phylum_Stab_Filtered_vsized.png"))
-  qgraph::qgraph(network_Nplus, 
+  Phylum_groups <- as.factor(otu_tax[rownames(network_list[[i]]$Nplus),"Phylum"])
+  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_network_list[[i]]$Nplus_Phylum_Stab_Filtered_vsized.png"))
+  qgraph::qgraph(network_list[[i]]$Nplus, 
     layout = "circle",
-    edge.color = ifelse(network_Nplus > 0, "blue", "red"),
+    edge.color = ifelse(network_list[[i]]$Nplus > 0, "blue", "red"),
     title = "Stab Network Nplus by Phylum",
     vsize = 2.5,
     groups = Phylum_groups)
   dev.off()
   # %%
-  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_Network_Nminus_Phylum_Stab_Filtered_vsized.png"))
-  qgraph::qgraph(network_Nminus, 
+  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_network_list[[i]]$Nminus_Phylum_Stab_Filtered_vsized.png"))
+  qgraph::qgraph(network_list[[i]]$Nminus, 
     layout = "circle",
-    edge.color = ifelse(network_Nminus > 0, "blue", "red"),
+    edge.color = ifelse(network_list[[i]]$Nminus > 0, "blue", "red"),
     title = "Stab Network Nminus by Phylum",
     vsize = 2.5,
     groups = Phylum_groups)
   dev.off()
 
-  # Visualize network_Nplus (Circular Layout)
+  # Visualize network_list[[i]]$Nplus (Circular Layout)
   otu_tax_df <- tax_table(rawdata)[,1:5] %>%
     as.data.frame() %>%
     rownames_to_column("OTU") %>%
@@ -99,14 +100,14 @@ for (i in timestamps)
   edges <- unique(do.call(rbind, lapply(pairs, create_edges, data = otu_tax_df[otu_tax_df$OTU %in% shared_otu, ])))
 
   # Extract lower triangular part
-  lower_tri <- lower.tri(network_Nplus, diag = FALSE)
+  lower_tri <- lower.tri(network_list[[i]]$Nplus, diag = FALSE)
   # Get non-zero elements and their indices
-  non_zero <- which(lower_tri & network_Nplus != 0, arr.ind = TRUE)
+  non_zero <- which(lower_tri & network_list[[i]]$Nplus != 0, arr.ind = TRUE)
   # Create the new table
   connect <- data.frame(
-    from = rownames(network_Nplus)[non_zero[, 1]],
-    to = colnames(network_Nplus)[non_zero[, 2]],
-    score = network_Nplus[non_zero])
+    from = rownames(network_list[[i]]$Nplus)[non_zero[, 1]],
+    to = colnames(network_list[[i]]$Nplus)[non_zero[, 2]],
+    score = network_list[[i]]$Nplus[non_zero])
 
   # create a vertices data.frame. One line per object of our hierarchy
   vertices  <-  data.frame(
@@ -116,7 +117,7 @@ for (i in timestamps)
 
   vertices$id <- NA
   myleaves <- which(is.na(match(vertices$name, edges$from)))
-  vertices$value[myleaves] <- colSums(network_Nplus) / sum(network_Nplus)
+  vertices$value[myleaves] <- colSums(network_list[[i]]$Nplus) / sum(network_list[[i]]$Nplus)
   nleaves <- length(myleaves)
   vertices$id[myleaves] <- seq(1:nleaves)
   vertices$angle <- 90 - 360 * vertices$id / nleaves
@@ -143,8 +144,8 @@ for (i in timestamps)
   ggsave(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_Nplus_Filtered_plot_circularized.pdf"), width = 12, height = 12, units = "in")
 
   # %%Visualize Edge weights
-  cor_values_Nplus <- as.vector(network_Nplus)
-  cor_values_Nminus <- as.vector(network_Nminus)
+  cor_values_Nplus <- as.vector(network_list[[i]]$Nplus)
+  cor_values_Nminus <- as.vector(network_list[[i]]$Nminus)
   cor_df <- data.frame(
     correlation = c(cor_values_Nplus, cor_values_Nminus),
     group = factor(rep(c("Nplus", "Nminus"), each = length(cor_values_Nplus)))
@@ -174,8 +175,8 @@ for (i in timestamps)
   for (j in 1:5)
     {
       Sim_list[[j]] <- list(
-        Nplus = synthesize_scaled_data(otu_Ab_Nplus, network_Nplus),
-        Nminus = synthesize_scaled_data(otu_Ab_Nminus, network_Nminus)
+        Nplus = synthesize_scaled_data(otu_Ab_Nplus, network_list[[i]]$Nplus),
+        Nminus = synthesize_scaled_data(otu_Ab_Nminus, network_list[[i]]$Nminus)
       )
     }
   cat('Calculate simulation data network on day ',i,'\n')
@@ -186,8 +187,8 @@ for (i in timestamps)
         nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
         lambda2.init=0.01,ebic.gamma=0.6)
       # filter edge sparsity
-      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.01] <- 0
-      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.01] <- 0
+      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.1] <- 0
+      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.1] <- 0
       diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
     }
   Sim_adj <- list()
@@ -247,8 +248,8 @@ for (i in timestamps)
   cat('Calculate confusion matrices on day ',i,'\n')
   confusion_results <- lapply(1:5, function(j)
     {
-      true_adj_Nplus <- (network_Nplus !=0)*1
-      true_adj_Nminus <- (network_Nminus !=0)*1
+      true_adj_Nplus <- (network_list[[i]]$Nplus !=0)*1
+      true_adj_Nminus <- (network_list[[i]]$Nminus !=0)*1
       Nplus_metrics <- calculate_metrics(true_adj_Nplus, Sim_adj[[j]]$Nplus)
       Nminus_metrics <- calculate_metrics(true_adj_Nminus, Sim_adj[[j]]$Nminus)
       return(list(Nplus = Nplus_metrics, Nminus = Nminus_metrics))

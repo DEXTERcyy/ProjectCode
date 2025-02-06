@@ -13,7 +13,7 @@ library(RColorBrewer)
 library(dplyr)
 source("Packages\\stabENG.r")
 source("Packages\\MyENG.r")
-source("Packages\\stabENG.r")
+
 rawdata <- readRDS("data\\DavarData1_substrate_phyloseq_1226_final_filtered.RDS")
 otu_raw <- otu_table(rawdata)
 otu_RA <- transform_sample_counts(otu_raw, function(x) x / sum(x) )
@@ -50,8 +50,8 @@ network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep
 network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
 network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
 # filter edge sparsity
-network_Nplus[abs(network_Nplus) < 0.075] <- 0
-network_Nminus[abs(network_Nminus) < 0.075] <- 0
+network_Nplus[abs(network_Nplus) < 0.01] <- 0
+network_Nminus[abs(network_Nminus) < 0.01] <- 0
 diag(network_Nplus) = diag(network_Nminus) <- 0
 # %% Plot network on Phylum level
 Phylum_groups <- as.factor(otu_tax[rownames(network_Nplus),"Phylum"])
@@ -184,8 +184,8 @@ for (j in 1:5)
       nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
       lambda2.init=0.01,ebic.gamma=0.6)
     # filter edge sparsity
-    # Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.01] <- 0
-    # Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.01] <- 0
+    Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.1] <- 0
+    Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.1] <- 0
     diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
   }
 Sim_adj <- list()
@@ -196,6 +196,14 @@ for (j in 1:5)
       Nminus = (Res_sim[[j]]$opt.fit$Nminus !=0)*1
     )
   }
+# #%% 
+# qgraph::qgraph(Res_sim[[1]]$opt.fit$Nminus, 
+#   layout = "circle",
+#   edge.color = ifelse(Res_sim[[1]]$opt.fit$Nminus > 0, "blue", "red"),
+#   title = "Stab Network Nminus by Phylum",
+#   vsize = 2.5,
+#   groups = Phylum_groups)
+# dev.off()
 #%% Confusion matrices
 calculate_mcc <- function(tp, tn, fp, fn)
   {
@@ -230,7 +238,7 @@ calculate_metrics <- function(true_adj, sim_adj)
   
     # Calculate ROC and AUC
     roc_obj <- pROC::roc(true_edges, sim_edges)
-    auc <- as.numeric(auc(roc_obj)) # plot here
+    auc <- as.numeric(auc(roc_obj))
   
     # F1 Score
     f1 <- F1_Score(sim_edges, true_edges)

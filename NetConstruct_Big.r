@@ -70,8 +70,8 @@ network_list <- list(network = list(Nplus = network_Nplus, Nminus = network_Nmin
 # %% precision matrix filter
 network_Nplus[abs(network_Nplus) < 0.1] <- 0
 network_Nminus[abs(network_Nminus) < 0.1] <- 0
-# network_Nplus_pcor <- network_results$opt.fit.pcor$Nplus
-# network_Nminus_pcor <- network_results$opt.fit.pcor$Nminus
+network_Nplus_pcor <- network_results$opt.fit.pcor$Nplus
+network_Nminus_pcor <- network_results$opt.fit.pcor$Nminus
 
 save.image("DataImage\\big1226_network_results_stabENG_Big_filtered.RData")
 

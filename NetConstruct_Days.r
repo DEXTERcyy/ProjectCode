@@ -13,7 +13,8 @@ library(ggraph)
 library(tidyverse)
 library(RColorBrewer)
 library(dplyr)
-source("stabENG.r")
+source("Packages\\stabENG.r")
+source("Packages\\MyENG.r")
 rawdata <- readRDS("data//n_starvation.rds")
 otu_Ab <- as.data.frame(t(otu_table(rawdata)))
 sam_info <- as.data.frame(sample_data(rawdata))
@@ -45,6 +46,9 @@ for (i in timestamps)
     lambda2.init=0.01,ebic.gamma=0.6)
   network_Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
   network_Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
+  # filter edges with small connections
+  network_Nplus[abs(network_Nplus) < 0.01] <- 0
+  network_Nminus[abs(network_Nminus) < 0.01] <- 0
   diag(network_Nplus) = diag(network_Nminus) = 0
   
   # %% Plot network on Phylum level
@@ -174,7 +178,11 @@ for (i in timestamps)
   for (j in 1:5)
     {
       Res_sim[[j]] <- stabENG(Sim_list[[j]], labels = shared_otu)
-    }
+      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.1] <- 0
+      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.1] <- 0
+      diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
+      
+  }
   Sim_adj <- list()
   for (j in 1:5)
     {
