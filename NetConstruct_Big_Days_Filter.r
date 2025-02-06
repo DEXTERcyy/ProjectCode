@@ -221,8 +221,8 @@ for (i in timestamps)
       # Confusion matrix
       cm <- confusionMatrix(as.factor(sim_edges), as.factor(true_edges), positive = "1")
       tn <- as.numeric(cm$table[1,1]) #true negatives
-      fn <- as.numeric(cm$table[1,2]) #false negatives
-      fp <- as.numeric(cm$table[2,1]) #false positives
+      fp <- as.numeric(cm$table[1,2]) #false positives
+      fn <- as.numeric(cm$table[2,1]) #false negatives
       tp <- as.numeric(cm$table[2,2]) #true positives
     
       # Calculate TPR, FPR, Precision, Recall
