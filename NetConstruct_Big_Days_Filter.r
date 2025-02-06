@@ -1,4 +1,30 @@
-# %%
+# requirements
+# !ebic.gamma: if too sparse change to 0.6
+if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
+library(devtools, quietly = TRUE)
+library(BiocManager, quietly = TRUE)
+if (!requireNamespace("phyloseq", quietly = TRUE)) BiocManager::install("phyloseq")
+if (!requireNamespace("SPRING", quietly = TRUE)) devtools::install_github("GraceYoon/SPRING")
+if (!requireNamespace("SpiecEasi", quietly = TRUE)) devtools::install_github("zdk123/SpiecEasi")
+if (!requireNamespace("stabJGL", quietly = TRUE)) devtools::install_github("camiling/stabJGL")
+devtools::install_github("stefpeschel/NetCoMi", ref = "develop",repos = c("https://cloud.r-project.org/",BiocManager::repositories()))
+if (!requireNamespace("caret", quietly = TRUE)) install.packages("caret")
+if (!requireNamespace("pROC", quietly = TRUE)) install.packages("pROC")
+if (!requireNamespace("MLmetrics", quietly = TRUE)) install.packages("MLmetrics")
+if (!requireNamespace("ggplot2", quietly = TRUE)) install.packages("ggplot2")
+if (!requireNamespace("tidyr", quietly = TRUE)) install.packages("tidyr")
+if (!requireNamespace("dplyr", quietly = TRUE)) install.packages("dplyr") # Likely installed with tidyverse
+if (!requireNamespace("ggraph", quietly = TRUE)) install.packages("ggraph")
+if (!requireNamespace("tidyverse", quietly = TRUE)) install.packages("tidyverse") # Installs a suite of packages
+if (!requireNamespace("RColorBrewer", quietly = TRUE)) install.packages("RColorBrewer")
+if (!requireNamespace("foreach", quietly = TRUE)) install.packages("foreach")
+if (!requireNamespace("doParallel", quietly = TRUE)) install.packages("doParallel")
+if (!requireNamespace("parallel", quietly = TRUE)) install.packages("parallel") # Usually base R, no need to install
+if (!requireNamespace("mixedCCA", quietly = TRUE)) install.packages("mixedCCA")
+if (!requireNamespace("igraph", quietly = TRUE)) install.packages("igraph")
+if (!requireNamespace("qgraph", quietly = TRUE)) install.packages("qgraph")
+
 library(phyloseq)
 library(SPRING)
 library(SpiecEasi)
@@ -32,6 +58,7 @@ timestamps <- unique(sam_info$Days)
 otu_Ab_Nplus_times <- list()
 otu_Ab_Nminus_times <- list()
 data_list_times <- list()
+n_sim <- 25
 for (i in timestamps)
   {
     otu_Ab_Nplus_times[[i]] <- otu_Ab[rownames(otu_Ab) %in% 
@@ -49,12 +76,12 @@ for (i in timestamps)
   cat('Calculating network on day ',i,'\n')
   network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 25,
     nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-    lambda2.init=0.01,ebic.gamma=0.6)
+    lambda2.init=0.01,ebic.gamma=0.2)
   network_list[[i]]$Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
   network_list[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
   # filter edge sparsity
-  network_list[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.01] <- 0
-  network_list[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.01] <- 0
+  network_list[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.1] <- 0
+  network_list[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.1] <- 0
   diag(network_list[[i]]$Nplus) = diag(network_list[[i]]$Nminus) <- 0
   # %% Plot network on Phylum level
   Phylum_groups <- as.factor(otu_tax[rownames(network_list[[i]]$Nplus),"Phylum"])
@@ -77,7 +104,7 @@ for (i in timestamps)
   dev.off()
 
   # Visualize network_list[[i]]$Nplus (Circular Layout)
-  otu_tax_df <- tax_table(rawdata)[,1:5] %>%
+  otu_tax_df <- tax_table(rawdata)[,1:n_sim] %>%
     as.data.frame() %>%
     rownames_to_column("OTU") %>%
       dplyr::select(-OTU, everything(), OTU)
@@ -172,7 +199,7 @@ for (i in timestamps)
     }
   cat('Synthesize simulation data on day ',i,'\n')
   Sim_list <- list()
-  for (j in 1:5)
+  for (j in 1:n_sim)
     {
       Sim_list[[j]] <- list(
         Nplus = synthesize_scaled_data(otu_Ab_Nplus, network_list[[i]]$Nplus),
@@ -181,18 +208,18 @@ for (i in timestamps)
     }
   cat('Calculate simulation data network on day ',i,'\n')
   Res_sim <- list()
-  for (j in 1:5)
+  for (j in 1:n_sim)
     {
       Res_sim[[j]] <- stabENG(Sim_list[[j]], labels = shared_otu, var.thresh = 0.1, rep.num = 25,
         nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-        lambda2.init=0.01,ebic.gamma=0.6)
+        lambda2.init=0.01,ebic.gamma=0.2)
       # filter edge sparsity
-      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.1] <- 0
-      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.1] <- 0
+      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.01] <- 0
+      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.01] <- 0
       diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
     }
   Sim_adj <- list()
-  for (j in 1:5)
+  for (j in 1:n_sim)
     {
       Sim_adj[[j]] <- list(
         Nplus = (Res_sim[[j]]$opt.fit$Nplus !=0)*1,
@@ -246,7 +273,7 @@ for (i in timestamps)
                   F1 = f1, AUC = auc, MCC = mcc))
     }
   cat('Calculate confusion matrices on day ',i,'\n')
-  confusion_results <- lapply(1:5, function(j)
+  confusion_results <- lapply(1:n_sim, function(j)
     {
       true_adj_Nplus <- (network_list[[i]]$Nplus !=0)*1
       true_adj_Nminus <- (network_list[[i]]$Nminus !=0)*1
@@ -264,7 +291,7 @@ for (i in timestamps)
                 names_to = c("group", "metric"), 
                 names_sep = "\\.",
                 values_to = "value") %>%
-    dplyr::mutate(matrix_id = rep(1:5, each = 14))
+    dplyr::mutate(matrix_id = rep(1:n_sim, each = 14))
 
   # %% barplot
   for (metric_name in unique(results_df_long$metric)) {

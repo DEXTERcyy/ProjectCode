@@ -282,7 +282,7 @@ source(file="Packages\\NetComi\\R\\dot-sparsify.R")
 source(file="Packages\\NetCoMi\\R\\transform.R")
 # %%
 NetCon <- myNetAnalysis(network_Nplus_pcor,network_Nminus_pcor)
-NetRes <- netAnalyze(NetCon, clustMethod = "cluster_fast_greedy")
+NetRes <- netAnalyze(NetCon, clustMethod = "cluster_fast_greedy", hubQuant = 0.95) #0.90
 NetSum <- summary(NetRes)
 
 # %% GCM heatmap plot
