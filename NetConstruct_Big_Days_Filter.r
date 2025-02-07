@@ -293,29 +293,32 @@ for (i in timestamps)
                 values_to = "value") %>%
     dplyr::mutate(matrix_id = rep(1:n_sim, each = 14))
 
-  # %% barplot
-  for (metric_name in unique(results_df_long$metric)) {
-    plot_data <- results_df_long %>%
-      dplyr::filter(metric == metric_name)
-    p <- ggplot(plot_data, aes(x = matrix_id, y = value, fill = group)) +
-      geom_bar(stat = "identity", position = "dodge") +
-      labs(title = paste(metric_name, "for Simulated Networks"),
-        x = "Matrix ID",
-        y = metric_name) +
-      theme_bw()
-      ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_",i,"_", metric_name, "_barplot.png"), p)
-  }
+  # # %% barplot
+  # for (metric_name in unique(results_df_long$metric)) {
+  #   plot_data <- results_df_long %>%
+  #     dplyr::filter(metric == metric_name)
+  #   p <- ggplot(plot_data, aes(x = matrix_id, y = value, fill = group)) +
+  #     geom_bar(stat = "identity", position = "dodge") +
+  #     labs(title = paste(metric_name, "for Simulated Networks"),
+  #       x = "Matrix ID",
+  #       y = metric_name) +
+  #     theme_bw()
+  #     ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_",i,"_", metric_name, "_barplot.png"), p)
+  # }
 
   # %% boxplot
-  for (metric_name in unique(results_df_long$metric)) {
-    plot_data <- results_df_long %>% filter(metric == metric_name)
-
-    p <- ggplot(plot_data, aes(x = group, y = value, fill = group)) +
-      geom_boxplot() +
-      labs(title = paste(metric_name, "Distribution"),
-          x = "Nitrogen Condition",
-          y = metric_name) +
-      theme_bw()
-    ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_",i,"_", metric_name, "_boxplot.png"), p)
-  }
+  metrics_to_plot <- c("TPR", "FPR", "Precision", "Recall", "F1", "AUC", "MCC")
+  filtered_df <- results_df_long %>%
+    filter(metric %in% metrics_to_plot)
+  
+  # Create boxplots
+  p <- ggplot(filtered_df, aes(x = group, y = value, color = group)) +
+    geom_boxplot() +
+    facet_wrap(~ metric, nrow = 1, scales = "free_y") + # facet_wrap for one row
+    labs(title = "Distribution of Confusion Metrics",
+         x = "Group",
+         y = "Value",
+         color = "Group") +
+    theme_minimal()
+  ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_Day",i,"_Confusion_boxplot.png"), p)
 }
