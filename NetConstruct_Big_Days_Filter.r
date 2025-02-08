@@ -58,7 +58,7 @@ timestamps <- unique(sam_info$Days)
 otu_Ab_Nplus_times <- list()
 otu_Ab_Nminus_times <- list()
 data_list_times <- list()
-n_sim <- 25
+n_sim <- 5
 for (i in timestamps)
   {
     otu_Ab_Nplus_times[[i]] <- otu_Ab[rownames(otu_Ab) %in% 
@@ -104,7 +104,7 @@ for (i in timestamps)
   dev.off()
 
   # Visualize network_list[[i]]$Nplus (Circular Layout)
-  otu_tax_df <- tax_table(rawdata)[,1:n_sim] %>%
+  otu_tax_df <- otu_tax[,1:5] %>% # first 5 taxas
     as.data.frame() %>%
     rownames_to_column("OTU") %>%
       dplyr::select(-OTU, everything(), OTU)
