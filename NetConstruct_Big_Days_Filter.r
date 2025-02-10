@@ -85,7 +85,7 @@ for (i in timestamps)
   diag(network_list[[i]]$Nplus) = diag(network_list[[i]]$Nminus) <- 0
   # %% Plot network on Phylum level
   Phylum_groups <- as.factor(otu_tax[rownames(network_list[[i]]$Nplus),"Phylum"])
-  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_network_list[[i]]$Nplus_Phylum_Stab_Filtered_vsized.png"))
+  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_network_Nplus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_list[[i]]$Nplus, 
     layout = "circle",
     edge.color = ifelse(network_list[[i]]$Nplus > 0, "blue", "red"),
@@ -94,7 +94,7 @@ for (i in timestamps)
     groups = Phylum_groups)
   dev.off()
   # %%
-  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_network_list[[i]]$Nminus_Phylum_Stab_Filtered_vsized.png"))
+  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_network_Nminus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_list[[i]]$Nminus, 
     layout = "circle",
     edge.color = ifelse(network_list[[i]]$Nminus > 0, "blue", "red"),
@@ -168,7 +168,7 @@ for (i in timestamps)
       plot.margin=unit(c(0,0,0,0),"cm"),
     ) +
     expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
-  ggsave(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Big_Nplus_Filtered_plot_circularized.pdf"), width = 12, height = 12, units = "in")
+  ggsave(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Nplus_Filtered_plot_circularized.pdf"), width = 12, height = 12, units = "in")
 
   # %%Visualize Edge weights
   cor_values_Nplus <- as.vector(network_list[[i]]$Nplus)
@@ -320,5 +320,5 @@ for (i in timestamps)
          y = "Value",
          color = "Group") +
     theme_minimal()
-  ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_Day",i,"_Confusion_boxplot.png"), p)
+  ggsave(filename = paste0("Plots/BigDataDaysFilter/Day_",i,"Filtered_Confusion_boxplot.png"), p)
 }
