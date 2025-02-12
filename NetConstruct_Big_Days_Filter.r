@@ -40,6 +40,7 @@ library(dplyr)
 source("Packages\\stabENG.r")
 source("Packages\\MyENG.r")
 source("Packages\\stabENG.r")
+source("Packages\\MyPlot.r")
 rawdata <- readRDS("data\\DavarData1_substrate_phyloseq_1226_final_filtered.RDS")
 otu_raw <- otu_table(rawdata)
 otu_RA <- transform_sample_counts(otu_raw, function(x) x / sum(x) )
@@ -67,11 +68,12 @@ for (i in timestamps)
       rownames(sam_info[sam_info$growthCondition=="minusN" & sam_info$Days == i,]),]
     data_list_times[[i]] <- list(Nplus = otu_Ab_Nplus_times[[i]], Nminus = otu_Ab_Nminus_times[[i]])
   }
-#save.image("DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
 # %%
 network_list <- list()
+network_pcor <- list()
 for (i in timestamps)
 {
+  plot_path = paste0("Plots/BigDataDaysFilter/Day_",i)
   data_list <- data_list_times[[i]]
   cat('Calculating network on day ',i,'\n')
   network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 25,
@@ -79,13 +81,16 @@ for (i in timestamps)
     lambda2.init=0.01,ebic.gamma=0.2)
   network_list[[i]]$Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
   network_list[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
+  network_pcor[[i]]$Nplus <- network_results$opt.fit.pcor$Nplus
+  network_pcor[[i]]$Nminus <- network_results$opt.fit.pcor$Nminus
   # filter edge sparsity
   network_list[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.1] <- 0
   network_list[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.1] <- 0
   diag(network_list[[i]]$Nplus) = diag(network_list[[i]]$Nminus) <- 0
+  
   # %% Plot network on Phylum level
   Phylum_groups <- as.factor(otu_tax[rownames(network_list[[i]]$Nplus),"Phylum"])
-  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_network_Nplus_Phylum_Stab_Filtered_vsized.png"))
+  png(filename=paste0(plot_path,"_network_Nplus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_list[[i]]$Nplus, 
     layout = "circle",
     edge.color = ifelse(network_list[[i]]$Nplus > 0, "blue", "red"),
@@ -93,8 +98,8 @@ for (i in timestamps)
     vsize = 2.5,
     groups = Phylum_groups)
   dev.off()
-  # %%
-  png(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_network_Nminus_Phylum_Stab_Filtered_vsized.png"))
+  
+  png(filename=paste0(plot_path,"_network_Nminus_Phylum_Stab_Filtered_vsized.png"))
   qgraph::qgraph(network_list[[i]]$Nminus, 
     layout = "circle",
     edge.color = ifelse(network_list[[i]]$Nminus > 0, "blue", "red"),
@@ -102,74 +107,6 @@ for (i in timestamps)
     vsize = 2.5,
     groups = Phylum_groups)
   dev.off()
-
-  # Visualize network_list[[i]]$Nplus (Circular Layout)
-  otu_tax_df <- otu_tax[,1:5] %>% # first 5 taxas
-    as.data.frame() %>%
-    rownames_to_column("OTU") %>%
-      dplyr::select(-OTU, everything(), OTU)
-
-  pairs <- list(
-    c("Kingdom", "Phylum"),
-    c("Phylum", "Class"),
-    c("Class", "Order"),
-    c("Order", "Family"),
-    c("Family", "OTU"))
-  # Function to create edges for a single pair
-  create_edges <- function(pair, data)
-    {
-      from <- data[[pair[1]]]
-      to <- data[[pair[2]]]
-      data.frame(from = from, to = to)
-    }
-
-  # Apply the function to all pairs and combine the results
-  edges <- unique(do.call(rbind, lapply(pairs, create_edges, data = otu_tax_df[otu_tax_df$OTU %in% shared_otu, ])))
-
-  # Extract lower triangular part
-  lower_tri <- lower.tri(network_list[[i]]$Nplus, diag = FALSE)
-  # Get non-zero elements and their indices
-  non_zero <- which(lower_tri & network_list[[i]]$Nplus != 0, arr.ind = TRUE)
-  # Create the new table
-  connect <- data.frame(
-    from = rownames(network_list[[i]]$Nplus)[non_zero[, 1]],
-    to = colnames(network_list[[i]]$Nplus)[non_zero[, 2]],
-    score = network_list[[i]]$Nplus[non_zero])
-
-  # create a vertices data.frame. One line per object of our hierarchy
-  vertices  <-  data.frame(
-    name = unique(c(as.character(edges$from), as.character(edges$to))) , 
-    value = runif(length(unique(c(as.character(edges$from), as.character(edges$to))))))
-  vertices$group  <-  edges$from[ match( vertices$name, edges$to ) ]
-
-  vertices$id <- NA
-  myleaves <- which(is.na(match(vertices$name, edges$from)))
-  vertices$value[myleaves] <- colSums(network_list[[i]]$Nplus) / sum(network_list[[i]]$Nplus)
-  nleaves <- length(myleaves)
-  vertices$id[myleaves] <- seq(1:nleaves)
-  vertices$angle <- 90 - 360 * vertices$id / nleaves
-  vertices$angle <- ifelse(vertices$angle < -90, vertices$angle+180, vertices$angle)
-  vertices$hjust <- ifelse( vertices$angle < -90, 1, 0)
-  mygraph <- igraph::graph_from_data_frame( edges, vertices=vertices )
-  from  <-  match( connect$from, vertices$name)
-  to  <-  match( connect$to, vertices$name)
-
-  ggraph::ggraph(mygraph, layout = 'dendrogram', circular = TRUE) + 
-    geom_conn_bundle(data = get_con(from = from, to = to), alpha=0.2, width=0.1, aes(colour = after_stat(index))) +
-    scale_edge_colour_gradient(low = "red", high = "blue") +
-    geom_node_text(aes(x = x*1.15, y=y*1.15, filter = leaf, label=name, angle = angle, hjust=hjust, colour=group), size=2, alpha=1) +
-    geom_node_point(aes(filter = leaf, x = x*1.07, y=y*1.07, colour=group, size=value, alpha=0.2)) +
-    scale_colour_manual(values= rep( brewer.pal(14,"Paired") , 30)) +
-    scale_size_continuous(range = c(0.1,10) ) +
-  # set width by edge cor value?
-    theme_void() +
-    theme(
-      legend.position="none",
-      plot.margin=unit(c(0,0,0,0),"cm"),
-    ) +
-    expand_limits(x = c(-1.3, 1.3), y = c(-1.3, 1.3))
-  ggsave(filename=paste0("Plots/BigDataDaysFilter/Days_",i,"_Nplus_Filtered_plot_circularized.pdf"), width = 12, height = 12, units = "in")
-
   # %%Visualize Edge weights
   cor_values_Nplus <- as.vector(network_list[[i]]$Nplus)
   cor_values_Nminus <- as.vector(network_list[[i]]$Nminus)
@@ -185,7 +122,11 @@ for (i in timestamps)
         x = "Correlation",
         y = "Frequency",
         fill = "Nitro Condition")
-
+  ggsave(filename=paste0(plot_path,"_correlation_distribution.png"))
+  
+  # Visualize network_list[[i]]$Nplus (Circular Layout)
+  cir_plot(network_list[[i]]$Nplus,otu_tax, shared_otu, plot_path)
+  cir_plot(network_list[[i]]$Nminus,otu_tax, shared_otu, plot_path)
   #%%
   set.seed(10010)
   synthesize_scaled_data <- function(dat, net)
@@ -231,7 +172,7 @@ for (i in timestamps)
     {
       numerator <- (tp * tn) - (fp * fn)
       denominator <- sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-
+  
       # If the denominator is 0, return 0 to avoid NaN errors
       if (denominator == 0) {
         return(0)
@@ -281,10 +222,10 @@ for (i in timestamps)
       Nminus_metrics <- calculate_metrics(true_adj_Nminus, Sim_adj[[j]]$Nminus)
       return(list(Nplus = Nplus_metrics, Nminus = Nminus_metrics))
   })
-
-
+  
+  
   results_df <- do.call(rbind, lapply(confusion_results, as.data.frame))
-
+  
   results_df_long <- results_df %>%
     dplyr::select(starts_with("Nplus.") | starts_with("Nminus.")) %>%
     tidyr::pivot_longer(cols = everything(), 
@@ -292,20 +233,7 @@ for (i in timestamps)
                 names_sep = "\\.",
                 values_to = "value") %>%
     dplyr::mutate(matrix_id = rep(1:n_sim, each = 14))
-
-  # # %% barplot
-  # for (metric_name in unique(results_df_long$metric)) {
-  #   plot_data <- results_df_long %>%
-  #     dplyr::filter(metric == metric_name)
-  #   p <- ggplot(plot_data, aes(x = matrix_id, y = value, fill = group)) +
-  #     geom_bar(stat = "identity", position = "dodge") +
-  #     labs(title = paste(metric_name, "for Simulated Networks"),
-  #       x = "Matrix ID",
-  #       y = metric_name) +
-  #     theme_bw()
-  #     ggsave(filename = paste0("Plots/BigDataDaysFilter/Days_Big_Filtered_",i,"_", metric_name, "_barplot.png"), p)
-  # }
-
+  
   # %% boxplot
   metrics_to_plot <- c("TPR", "FPR", "Precision", "Recall", "F1", "AUC", "MCC")
   filtered_df <- results_df_long %>%
@@ -320,5 +248,9 @@ for (i in timestamps)
          y = "Value",
          color = "Group") +
     theme_minimal()
-  ggsave(filename = paste0("Plots/BigDataDaysFilter/Day_",i,"Filtered_Confusion_boxplot.png"), p)
+  ggsave(filename = paste0(plot_path,"Filtered_Confusion_boxplot.png"), p)
 }
+# save network_list and network_pcor as csv
+write.csv(network_list, "DataImage\\network_prec.csv")
+write.csv(network_pcor, "DataImage\\network_pcor.csv")
+save.image("DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")

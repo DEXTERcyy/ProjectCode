@@ -206,11 +206,6 @@ stabENG_select_lambda2_eBIC = function(Y,labels, weights="equal",
     ebic.vals[i] = stabJGL::eBIC_adapted(mods.lam2[[i]],sample.cov=sample.cov,n.vals=n.vals,gamma=gamma)
     done <- round(100 * i / nlambda2)
     cat('Tuning lambda2: ', done, ' % done \n')
-    # if (verbose) {
-    #   done <- round(100 * i / nlambda2)
-    #   done.next <- round(100 * (i + 1) / nlambda2)
-    #   if (i == nlambda2| (done %% 5) == 0 & (done.next %% 5) != 0) cat('Tuning lambda2: ', done, ' % done \n')
-    # }
   }
   opt.ind = which.min(ebic.vals)
   res=list(opt.fit=mods.lam2[[opt.ind]], opt.lambda1 = lambda1, opt.lambda2 = lambda2.vals[opt.ind], opt.index = opt.ind,opt.ebic=ebic.vals[opt.ind],
