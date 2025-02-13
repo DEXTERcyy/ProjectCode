@@ -37,11 +37,11 @@ library(ggraph)
 library(tidyverse)
 library(RColorBrewer)
 library(dplyr)
-source("Packages\\stabENG.r")
-source("Packages\\MyENG.r")
-source("Packages\\stabENG.r")
-source("Packages\\MyPlot.r")
-rawdata <- readRDS("data\\DavarData1_substrate_phyloseq_1226_final_filtered.RDS")
+source("Packages//stabENG.r")
+source("Packages//MyENG.r")
+source("Packages//stabENG.r")
+source("Packages//MyPlot.r")
+rawdata <- readRDS("data//DavarData1_substrate_phyloseq_1226_final_filtered.rds")
 otu_raw <- otu_table(rawdata)
 otu_RA <- transform_sample_counts(otu_raw, function(x) x / sum(x) )
 otu_RA <- filter_taxa(otu_RA, function(x) mean(x) > 1e-3, TRUE)
@@ -72,7 +72,7 @@ for (i in timestamps)
 network_list <- list()
 network_pcor <- list()
 i = "8"
-plot_path = paste0("Plots/BigDataDaysFilter/Day_",i)
+plot_path = paste0("Plots//BigDataDaysFilter//Day_",i)
 data_list <- data_list_times[[i]]
 cat('Calculating network on day ',i,'\n')
 network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 25,
@@ -125,6 +125,7 @@ ggsave(filename=paste0(plot_path,"_correlation_distribution.png"))
 
 # Visualize network_list[[i]]$Nplus (Circular Layout)
 cir_plot(network_list[[i]]$Nplus,otu_tax, shared_otu, plot_path)
+cir_plot(network_list[[i]]$Nminus,otu_tax, shared_otu, plot_path)
 
 #%%
 set.seed(10010)
@@ -249,4 +250,4 @@ p <- ggplot(filtered_df, aes(x = group, y = value, color = group)) +
   theme_minimal()
 ggsave(filename = paste0(plot_path,"Filtered_Confusion_boxplot.png"), p)
 
-# save.image("DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
+save.image(paste0("DataImage//big1226_Days_network_results_Big_Day",i,".RData"))
