@@ -125,8 +125,8 @@ for (i in timestamps)
   ggsave(filename=paste0(plot_path,"_correlation_distribution.png"))
   
   # Visualize network_list[[i]]$Nplus (Circular Layout)
-  cir_plot(network_list[[i]]$Nplus,otu_tax, shared_otu, plot_path)
-  cir_plot(network_list[[i]]$Nminus,otu_tax, shared_otu, plot_path)
+  cir_plot(network_list[[i]]$Nplus,otu_tax, shared_otu, paste0(plot_path,"_network_Nplus_Circular"))
+  cir_plot(network_list[[i]]$Nminus,otu_tax, shared_otu, paste0(plot_path,"_network_Nminus_Circular"))
   #%%
   set.seed(10010)
   synthesize_scaled_data <- function(dat, net)
