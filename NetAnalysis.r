@@ -3,7 +3,7 @@ myNetAnalysis <- function(assoMat1, assoMat2, sparsMethod = "t-test")
   {
     set.seed(10010)
     dataType = assoType = "partialCorr"
-    sampleSize = c(118,127)
+    sampleSize = c(118,127) # 118 Nplus 117 Nminus
     counts1 <- counts2 <- NULL
     countsJointOrig <- NULL
     countsOrig1 <- countsOrig2 <- NULL
@@ -277,11 +277,11 @@ myNetAnalysis <- function(assoMat1, assoMat2, sparsMethod = "t-test")
 }
 # %%
 library(NetCoMi)
-load(file = "DataImage\\network_results_stabENG.RData")
+load(file = "DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
 source(file="Packages\\NetComi\\R\\dot-sparsify.R")
 source(file="Packages\\NetCoMi\\R\\transform.R")
 # %%
-NetCon <- myNetAnalysis(network_Nplus_pcor,network_Nminus_pcor)
+NetCon <- myNetAnalysis(network_pcor$`4`$Nplus,network_pcor$`4`$Nminus)
 NetRes <- netAnalyze(NetCon, clustMethod = "cluster_fast_greedy")
 NetSum <- summary(NetRes)
 
@@ -322,6 +322,6 @@ diff_season <- diffnet(NetCon,n1 = 118,n2 = 127,
 
 # %% net compare
 tmp = summary(NetRes, 
-  groupNames = c("Pos", "Neg"),
+  groupNames = c("Nplus", "Nminus"),
   showCentr = c("degree", "between", "closeness"), 
   numbNodes = 5)

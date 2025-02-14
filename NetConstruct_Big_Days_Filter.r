@@ -24,7 +24,7 @@ if (!requireNamespace("parallel", quietly = TRUE)) install.packages("parallel") 
 if (!requireNamespace("mixedCCA", quietly = TRUE)) install.packages("mixedCCA")
 if (!requireNamespace("igraph", quietly = TRUE)) install.packages("igraph")
 if (!requireNamespace("qgraph", quietly = TRUE)) install.packages("qgraph")
-
+start_time <- Sys.time()
 library(phyloseq)
 library(SPRING)
 library(SpiecEasi)
@@ -83,7 +83,13 @@ for (i in timestamps)
   network_list[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
   network_pcor[[i]]$Nplus <- network_results$opt.fit.pcor$Nplus
   network_pcor[[i]]$Nminus <- network_results$opt.fit.pcor$Nminus
-  # filter edge sparsity
+  # save network_pcor
+  network_pcor[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.01] <- 0
+  network_pcor[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.01] <- 0
+  # network_pcor[[i]]$Nplus[abs(network_pcor[[i]]$Nplus) < 0.01] <- 0
+  # network_pcor[[i]]$Nminus[abs(network_pcor[[i]]$Nminus) < 0.01] <- 0
+  diag(network_pcor[[i]]$Nplus) = diag(network_pcor[[i]]$Nminus) <- 0
+  # filter edge sparsity for simulation
   network_list[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.1] <- 0
   network_list[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.1] <- 0
   diag(network_list[[i]]$Nplus) = diag(network_list[[i]]$Nminus) <- 0
@@ -251,6 +257,6 @@ for (i in timestamps)
   ggsave(filename = paste0(plot_path,"Filtered_Confusion_boxplot.png"), p)
 }
 # save network_list and network_pcor as csv
-write.csv(network_list, "DataImage//network_prec.csv")
 write.csv(network_pcor, "DataImage//network_pcor.csv")
 save.image("DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
+print("All done"); print(Sys.time() - start_time)
