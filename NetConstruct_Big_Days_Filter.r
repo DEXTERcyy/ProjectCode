@@ -279,30 +279,4 @@ for (i in timestamps)
 write.csv(network_pcor, "DataImage//network_pcor.csv")
 save.image("DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
 print("All done"); print(Sys.time() - start_time)
-
-#%% 
-for (i in timestamps)
-{
-  plot_path = paste0("Plots//BigDataDaysFilter//Day_",i)
-  for (j in 1:n_sim)
-    {
-      png(filename=paste0(plot_path,"_simulation_network_",j,"_Nplus_Phylum_Stab_Filtered_vsized.png"))
-      qgraph::qgraph(Res_sim[[j]]$opt.fit$Nplus, 
-        layout = "circle",
-        edge.color = ifelse(Res_sim[[j]]$opt.fit$Nplus > 0, "blue", "red"),
-        title = "Stab Network Nplus by Phylum",
-        vsize = 2.5,
-        groups = Phylum_groups)
-      dev.off()
-      
-      png(filename=paste0(plot_path,"_simulation_network_",j,"_Nminus_Phylum_Stab_Filtered_vsized.png"))
-      qgraph::qgraph(Res_sim[[j]]$opt.fit$Nminus, 
-        layout = "circle",
-        edge.color = ifelse(Res_sim[[j]]$opt.fit$Nminus > 0, "blue", "red"),
-        title = "Stab Network Nminus by Phylum",
-        vsize = 2.5,
-        groups = Phylum_groups)
-      dev.off()
-    }
-}
   
