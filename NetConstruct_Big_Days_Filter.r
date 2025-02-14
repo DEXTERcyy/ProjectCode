@@ -84,7 +84,7 @@ for (i in timestamps)
   network_list[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
   network_pcor[[i]]$Nplus <- network_results$opt.fit.pcor$Nplus
   network_pcor[[i]]$Nminus <- network_results$opt.fit.pcor$Nminus
-  # save network_pcor
+  # save network_pcor (filter by Prec or pCor?)
   network_pcor[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.01] <- 0
   network_pcor[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.01] <- 0
   # network_pcor[[i]]$Nplus[abs(network_pcor[[i]]$Nplus) < 0.01] <- 0
@@ -114,13 +114,16 @@ for (i in timestamps)
     vsize = 2.5,
     groups = Phylum_groups)
   dev.off()
-  # %%Visualize Edge weights
+  # %%Visualize Edge weights (pCor or Prec?)
   cor_values_Nplus <- as.vector(network_list[[i]]$Nplus)
   cor_values_Nminus <- as.vector(network_list[[i]]$Nminus)
+  cor_values_Nplus_filtered <- cor_values_Nplus[cor_values_Nplus != 0]
+  cor_values_Nminus_filtered <- cor_values_Nminus[cor_values_Nminus != 0]
   cor_df <- data.frame(
-    correlation = c(cor_values_Nplus, cor_values_Nminus),
+    correlation = c(cor_values_Nplus_filtered, cor_values_Nminus_filtered),
     group = factor(rep(c("Nplus", "Nminus"), each = length(cor_values_Nplus)))
   )
+
   ggplot2::ggplot(cor_df, aes(x = correlation, fill = group)) +
     geom_histogram(position = "dodge", bins = 30, alpha = 0.7) +
     scale_fill_manual(values = c("Nplus" = "blue", "Nminus" = "red")) +
