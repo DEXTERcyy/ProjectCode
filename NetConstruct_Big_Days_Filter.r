@@ -73,6 +73,7 @@ network_list <- list()
 network_pcor <- list()
 for (i in timestamps)
 {
+  i<-paste0("Day_",i)
   plot_path = paste0("Plots//BigDataDaysFilter//Day_",i)
   data_list <- data_list_times[[i]]
   cat('Calculating network on day ',i,'\n')
@@ -148,7 +149,7 @@ for (i in timestamps)
   Sim_list <- list()
   for (j in 1:n_sim)
     {
-      Sim_list[[j]] <- list(
+      Sim_list[[i]][[j]] <- list(
         Nplus = synthesize_scaled_data(otu_Ab_Nplus, network_list[[i]]$Nplus),
         Nminus = synthesize_scaled_data(otu_Ab_Nminus, network_list[[i]]$Nminus)
       )
@@ -157,20 +158,38 @@ for (i in timestamps)
   Res_sim <- list()
   for (j in 1:n_sim)
     {
-      Res_sim[[j]] <- stabENG(Sim_list[[j]], labels = shared_otu, var.thresh = 0.1, rep.num = 25,
+      Res_sim[[i]][[j]] <- stabENG(Sim_list[[i]][[j]], labels = shared_otu, var.thresh = 0.1, rep.num = 25,
         nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
         lambda2.init=0.01,ebic.gamma=0.2)
       # filter edge sparsity
-      Res_sim[[j]]$opt.fit$Nplus[abs(Res_sim[[j]]$opt.fit$Nplus) < 0.01] <- 0
-      Res_sim[[j]]$opt.fit$Nminus[abs(Res_sim[[j]]$opt.fit$Nminus) < 0.01] <- 0
-      diag(Res_sim[[j]]$opt.fit$Nplus) = diag(Res_sim[[j]]$opt.fit$Nminus) <- 0
-    }
+      Res_sim[[i]][[j]]$opt.fit$Nplus[abs(Res_sim[[i]][[j]]$opt.fit$Nplus) < 0.01] <- 0
+      Res_sim[[i]][[j]]$opt.fit$Nminus[abs(Res_sim[[i]][[j]]$opt.fit$Nminus) < 0.01] <- 0
+      diag(Res_sim[[i]][[j]]$opt.fit$Nplus) = diag(Res_sim[[i]][[j]]$opt.fit$Nminus) <- 0
+      # plot sim network
+      png(filename=paste0(plot_path,"_simulation_network_",j,"_Nplus_Phylum_Stab_Filtered_vsized.png"))
+      qgraph::qgraph(Res_sim[[i]][[j]]$opt.fit$Nplus, 
+        layout = "circle",
+        edge.color = ifelse(Res_sim[[i]][[j]]$opt.fit$Nplus > 0, "blue", "red"),
+        title = "Stab Network Nplus by Phylum",
+        vsize = 2.5,
+        groups = Phylum_groups)
+      dev.off()
+      
+      png(filename=paste0(plot_path,"_simulation_network_",j,"_Nminus_Phylum_Stab_Filtered_vsized.png"))
+      qgraph::qgraph(Res_sim[[i]][[j]]$opt.fit$Nminus, 
+        layout = "circle",
+        edge.color = ifelse(Res_sim[[i]][[j]]$opt.fit$Nminus > 0, "blue", "red"),
+        title = "Stab Network Nminus by Phylum",
+        vsize = 2.5,
+        groups = Phylum_groups)
+      dev.off()
+  }
   Sim_adj <- list()
   for (j in 1:n_sim)
     {
-      Sim_adj[[j]] <- list(
-        Nplus = (Res_sim[[j]]$opt.fit$Nplus !=0)*1,
-        Nminus = (Res_sim[[j]]$opt.fit$Nminus !=0)*1
+      Sim_adj[[i]][[j]] <- list(
+        Nplus = (Res_sim[[i]][[j]]$opt.fit$Nplus !=0)*1,
+        Nminus = (Res_sim[[i]][[j]]$opt.fit$Nminus !=0)*1
       )
     }
   #%% Confusion matrices
@@ -224,8 +243,8 @@ for (i in timestamps)
     {
       true_adj_Nplus <- (network_list[[i]]$Nplus !=0)*1
       true_adj_Nminus <- (network_list[[i]]$Nminus !=0)*1
-      Nplus_metrics <- calculate_metrics(true_adj_Nplus, Sim_adj[[j]]$Nplus)
-      Nminus_metrics <- calculate_metrics(true_adj_Nminus, Sim_adj[[j]]$Nminus)
+      Nplus_metrics <- calculate_metrics(true_adj_Nplus, Sim_adj[[i]][[j]]$Nplus)
+      Nminus_metrics <- calculate_metrics(true_adj_Nminus, Sim_adj[[i]][[j]]$Nminus)
       return(list(Nplus = Nplus_metrics, Nminus = Nminus_metrics))
   })
   
@@ -260,3 +279,30 @@ for (i in timestamps)
 write.csv(network_pcor, "DataImage//network_pcor.csv")
 save.image("DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
 print("All done"); print(Sys.time() - start_time)
+
+#%% 
+for (i in timestamps)
+{
+  plot_path = paste0("Plots//BigDataDaysFilter//Day_",i)
+  for (j in 1:n_sim)
+    {
+      png(filename=paste0(plot_path,"_simulation_network_",j,"_Nplus_Phylum_Stab_Filtered_vsized.png"))
+      qgraph::qgraph(Res_sim[[j]]$opt.fit$Nplus, 
+        layout = "circle",
+        edge.color = ifelse(Res_sim[[j]]$opt.fit$Nplus > 0, "blue", "red"),
+        title = "Stab Network Nplus by Phylum",
+        vsize = 2.5,
+        groups = Phylum_groups)
+      dev.off()
+      
+      png(filename=paste0(plot_path,"_simulation_network_",j,"_Nminus_Phylum_Stab_Filtered_vsized.png"))
+      qgraph::qgraph(Res_sim[[j]]$opt.fit$Nminus, 
+        layout = "circle",
+        edge.color = ifelse(Res_sim[[j]]$opt.fit$Nminus > 0, "blue", "red"),
+        title = "Stab Network Nminus by Phylum",
+        vsize = 2.5,
+        groups = Phylum_groups)
+      dev.off()
+    }
+}
+  
