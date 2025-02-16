@@ -67,13 +67,12 @@ for (i in timestamps)
     otu_Ab_Nminus_times[[i]] <- otu_Ab[rownames(otu_Ab) %in%
       rownames(sam_info[sam_info$growthCondition=="minusN" & sam_info$Days == i,]),]
     data_list_times[[i]] <- list(Nplus = otu_Ab_Nplus_times[[i]], Nminus = otu_Ab_Nminus_times[[i]])
-  }
+}
 # %%
 network_list <- list()
 network_pcor <- list()
 for (i in timestamps)
 {
-  i<-paste0("Day_",i)
   plot_path = paste0("Plots//BigDataDaysFilter//Day_",i)
   data_list <- data_list_times[[i]]
   cat('Calculating network on day ',i,'\n')
@@ -115,23 +114,16 @@ for (i in timestamps)
     groups = Phylum_groups)
   dev.off()
   # %%Visualize Edge weights (pCor or Prec?)
-  cor_values_Nplus <- as.vector(network_list[[i]]$Nplus)
-  cor_values_Nminus <- as.vector(network_list[[i]]$Nminus)
+  cor_values_Nplus <- as.vector(network_pcor[[i]]$Nplus)
+  cor_values_Nminus <- as.vector(network_pcor[[i]]$Nminus)
   cor_values_Nplus_filtered <- cor_values_Nplus[cor_values_Nplus != 0]
   cor_values_Nminus_filtered <- cor_values_Nminus[cor_values_Nminus != 0]
-  cor_df <- data.frame(
-    correlation = c(cor_values_Nplus_filtered, cor_values_Nminus_filtered),
-    group = factor(rep(c("Nplus", "Nminus"), each = length(cor_values_Nplus)))
-  )
 
-  ggplot2::ggplot(cor_df, aes(x = correlation, fill = group)) +
-    geom_histogram(position = "dodge", bins = 30, alpha = 0.7) +
-    scale_fill_manual(values = c("Nplus" = "blue", "Nminus" = "red")) +
-    theme_minimal() +
-    labs(title = "Distribution of Correlation Values",
-        x = "Correlation",
-        y = "Frequency",
-        fill = "Nitro Condition")
+  ggplot(data.frame(Type = c(rep("N+", length(cor_values_Nplus_filtered)), rep("N-", length(cor_values_Nminus_filtered))), 
+    Value = c(cor_values_Nplus_filtered, cor_values_Nminus_filtered)), 
+    aes(x = Value, color = Type)) + 
+    geom_density() + 
+    labs(x = "Correlation Value", y = "Density")
   ggsave(filename=paste0(plot_path,"_correlation_distribution.png"))
   
   # Visualize network_list[[i]]$Nplus (Circular Layout)
@@ -281,5 +273,6 @@ for (i in timestamps)
 # save network_list and network_pcor as csv
 write.csv(network_pcor, "DataImage//network_pcor.csv")
 save.image("DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
-print("All done"); print(Sys.time() - start_time)
+cat("All done")
+cat(Sys.time() - start_time)
   
