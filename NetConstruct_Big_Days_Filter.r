@@ -69,7 +69,9 @@ for (i in timestamps)
     data_list_times[[i]] <- list(Nplus = otu_Ab_Nplus_times[[i]], Nminus = otu_Ab_Nminus_times[[i]])
 }
 # %%
+network_list_raw <- list()
 network_list <- list()
+network_pcor_raw <- list()
 network_pcor <- list()
 for (i in timestamps)
 {
@@ -79,21 +81,24 @@ for (i in timestamps)
   network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 25,
     nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
     lambda2.init=0.01,ebic.gamma=0.2)
-  network_list[[i]]$Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
-  network_list[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
-  network_pcor[[i]]$Nplus <- network_results$opt.fit.pcor$Nplus
-  network_pcor[[i]]$Nminus <- network_results$opt.fit.pcor$Nminus
-  # save network_pcor (filter by Prec or pCor?)
-  network_pcor[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.01] <- 0
-  network_pcor[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.01] <- 0
+  network_list_raw[[i]]$Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
+  network_list_raw[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
+  network_pcor_raw[[i]]$Nplus <- network_results$opt.fit.pcor$Nplus
+  network_pcor_raw[[i]]$Nminus <- network_results$opt.fit.pcor$Nminus
+  # filter edge sparsity for simulation
+  network_list[[i]]$Nplus <- network_list_raw[[i]]$Nplus
+  network_list[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.01] <- 0
+  network_list[[i]]$Nminus <- network_list_raw[[i]]$Nminus
+  network_list[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.1] <- 0
+  diag(network_list[[i]]$Nplus) = diag(network_list[[i]]$Nminus) <- 0
+  # filter network_pcor
+  network_pcor[[i]]$Nplus <- network_pcor_raw[[i]]$Nplus
+  network_pcor[[i]]$Nplus[abs(network_pcor[[i]]$Nplus) < 0.01] <- 0
+  network_pcor[[i]]$Nminus <- network_pcor_raw[[i]]$Nminus
+  network_pcor[[i]]$Nminus[abs(network_pcor[[i]]$Nminus) < 0.01] <- 0
   # network_pcor[[i]]$Nplus[abs(network_pcor[[i]]$Nplus) < 0.01] <- 0
   # network_pcor[[i]]$Nminus[abs(network_pcor[[i]]$Nminus) < 0.01] <- 0
   diag(network_pcor[[i]]$Nplus) = diag(network_pcor[[i]]$Nminus) <- 0
-  # filter edge sparsity for simulation
-  network_list[[i]]$Nplus[abs(network_list[[i]]$Nplus) < 0.1] <- 0
-  network_list[[i]]$Nminus[abs(network_list[[i]]$Nminus) < 0.1] <- 0
-  diag(network_list[[i]]$Nplus) = diag(network_list[[i]]$Nminus) <- 0
-  
   # %% Plot network on Phylum level
   Phylum_groups <- as.factor(otu_tax[rownames(network_list[[i]]$Nplus),"Phylum"])
   png(filename=paste0(plot_path,"_network_Nplus_Phylum_Stab_Filtered_vsized.png"))
