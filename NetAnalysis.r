@@ -281,7 +281,7 @@ myNetConstruct <- function(assoMat1, assoMat2, sparsMethod = "none")
   return(output)
 }
 # %%
-NetCon <- myNetConstruct(network_pcor$`12`$Nplus,network_pcor$`12`$Nminus)
+NetCon <- myNetConstruct(network_pcor$`16`$Nplus,network_pcor$`16`$Nminus)
 NetRes <- netAnalyze(NetCon, centrLCC = FALSE,
   avDissIgnoreInf = TRUE,
   sPathNorm = FALSE,
@@ -323,12 +323,13 @@ plot(NetRes,
   showTitle = TRUE,
   cexTitle = 5)
 legend(0.7, 1.1, cex = 5, title = "estimated association:",
-  legend = c("Nplus","Nminus"), lty = 2, lwd = 5, col = c("#009900","red"), 
+  legend = c("Positive","Negative"), lty = 2, lwd = 5, col = c("#009900","red"), 
   bty = "n", horiz = TRUE)
 dev.off()
 # %% Visualizing the network
 pdf(file="Plots/NetCoMi/network_plot_spring.pdf",width = 50, height = 30)
 plot(NetRes,
+  sameLayout = TRUE,
   layout = "spring",
   repulsion = 0.8,
   shortenLabels = "none",
@@ -345,14 +346,17 @@ plot(NetRes,
   showTitle = TRUE,
   cexTitle = 2.3)
 legend(0.7, 1.1, cex = 2.2, title = "Partial correlation:",
-    legend = c("Nplus","Nminus"), lty = 1, lwd = 3, col = c("#009900","red"), 
+    legend = c("Positive","Negative"), lty = 1, lwd = 3, col = c("#009900","red"), 
     bty = "n", horiz = TRUE)
 dev.off()
 
 # %% diff net
-diff_season <- diffnet(NetCon,n1 = 118,n2 = 127,
-  diffMethod = "fisherTest", 
-  adjust = "none")
+diff_season <- diffnet(NetCon,diffMethod = "fisherTest",
+  discordThresh = 0.6,
+  adjust = "none",
+  n1 = 118,n2 = 127)
+# %% 
+p.adjust()
 
 # %% net compare
 tmp = summary(NetRes, 

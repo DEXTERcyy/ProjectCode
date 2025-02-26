@@ -1,4 +1,4 @@
-# requirements
+#%% requirements
 # !ebic.gamma: if too sparse change to 0.6
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
@@ -55,7 +55,7 @@ otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCo
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
 # by Group and Days
-timestamps <- unique(sam_info$Days)
+timestamps <- sort(as.integer(levels(sam_info$Days)))
 otu_Ab_Nplus_times <- list()
 otu_Ab_Nminus_times <- list()
 data_list_times <- list()
@@ -73,6 +73,7 @@ network_list_raw <- list()
 network_list <- list()
 network_pcor_raw <- list()
 network_pcor <- list()
+confusion_results_df <- list()
 for (i in timestamps)
 {
   plot_path = paste0("Plots//BigDataDaysFilter//Day_",i)
@@ -257,24 +258,46 @@ for (i in timestamps)
                 names_to = c("group", "metric"), 
                 names_sep = "\\.",
                 values_to = "value") %>%
-    dplyr::mutate(matrix_id = rep(1:n_sim, each = 14))
+    dplyr::mutate(matrix_id = rep(1:n_sim, each = 14)) %>%
+    dplyr::mutate(times = rep(i, n_sim*14))
+  # append results_df_long to confusion_results_df
+  confusion_results_df <- rbind(confusion_results_df, results_df_long)
+  # # %% boxplot
+  # metrics_to_plot <- c("TPR", "FPR", "Precision", "Recall", "F1", "AUC", "MCC")
+  # filtered_df <- results_df_long %>%
+  #   filter(metric %in% metrics_to_plot)
   
-  # %% boxplot
-  metrics_to_plot <- c("TPR", "FPR", "Precision", "Recall", "F1", "AUC", "MCC")
-  filtered_df <- results_df_long %>%
-    filter(metric %in% metrics_to_plot)
-  
-  # Create boxplots
-  p <- ggplot(filtered_df, aes(x = group, y = value, color = group)) +
-    geom_boxplot() +
-    facet_wrap(~ metric, nrow = 1, scales = "free_y") + # facet_wrap for one row
-    labs(title = "Distribution of Confusion Metrics",
-         x = "Group",
-         y = "Value",
-         color = "Group") +
-    theme_minimal()
-  ggsave(filename = paste0(plot_path,"Filtered_Confusion_boxplot.png"), p)
+  # # Create boxplots
+  # p <- ggplot(filtered_df, aes(x = group, y = value, color = group)) +
+  #   geom_boxplot() +
+  #   facet_wrap(~ metric, nrow = 1, scales = "free_y") + # facet_wrap for one row
+  #   labs(title = "Distribution of Confusion Metrics",
+  #        x = "Group",
+  #        y = "Value",
+  #        color = "Group") +
+  #   theme_minimal()
+  # ggsave(filename = paste0(plot_path,"_Filtered_Confusion_boxplot.png"), p)
 }
+
+# Filter for TPR, FPR, and F1 metrics
+selected_metrics <- c("TPR", "FPR", "F1")
+filtered_data <- confusion_results_df %>% filter(metric %in% selected_metrics)
+
+# Plot
+png(filename = "Plots//BigDataDaysFilter//boxplot_confusion_matrix.png")
+ggplot(filtered_data, aes(x = factor(times), y = value, fill = group)) +
+  geom_boxplot(outlier.shape = 21, outlier.fill = "white", outlier.color = "black", position = position_dodge(0.8)) +
+  scale_fill_manual(values = c("Nplus" = "#00BFC4", "Nminus" = "#F8766D")) +  # Custom colors
+  facet_wrap(~metric, scales = "free_y") +  # Create separate plots for each metric
+  labs(x = "Times", y = "Value", title = "Confusion Metrics") +
+  theme_minimal(base_size = 14) +  # Clean theme with adjusted font size
+  theme(
+    legend.position = "top",  # Move legend to top
+    panel.grid.major = element_line(color = "gray90"),  # Add grid lines
+    panel.border = element_rect(color = "black", fill = NA),  # Add border
+    strip.text = element_text(face = "bold", size = 12)  # Make facet labels bold
+  )
+dev.off()
 # save network_list and network_pcor as csv
 write.csv(network_pcor, "DataImage//network_pcor.csv")
 save.image("DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
