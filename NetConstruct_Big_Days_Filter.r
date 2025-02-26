@@ -283,9 +283,9 @@ for (i in timestamps)
 selected_metrics <- c("TPR", "FPR", "F1")
 filtered_data <- confusion_results_df %>% filter(metric %in% selected_metrics)
 
-# Plot
-png(filename = "Plots//BigDataDaysFilter//boxplot_confusion_matrix.png")
-ggplot(filtered_data, aes(x = factor(times), y = value, fill = group)) +
+# %% Plot
+#png(filename = "Plots//BigDataDaysFilter//boxplot_confusion_matrix.png")
+ggplot(filtered_data, aes(x = factor(as.integer(times)), y = value, fill = group)) +
   geom_boxplot(outlier.shape = 21, outlier.fill = "white", outlier.color = "black", position = position_dodge(0.8)) +
   scale_fill_manual(values = c("Nplus" = "#00BFC4", "Nminus" = "#F8766D")) +  # Custom colors
   facet_wrap(~metric, scales = "free_y") +  # Create separate plots for each metric
@@ -297,8 +297,8 @@ ggplot(filtered_data, aes(x = factor(times), y = value, fill = group)) +
     panel.border = element_rect(color = "black", fill = NA),  # Add border
     strip.text = element_text(face = "bold", size = 12)  # Make facet labels bold
   )
-dev.off()
-# save network_list and network_pcor as csv
+#dev.off()
+# %% save network_list and network_pcor as csv
 write.csv(network_pcor, "DataImage//network_pcor.csv")
 save.image("DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
 cat("All done")
