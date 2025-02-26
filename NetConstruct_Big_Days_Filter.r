@@ -55,7 +55,7 @@ otu_Ab_Nplus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCo
 otu_Ab_Nminus <- otu_Ab[rownames(otu_Ab) %in% rownames(sam_info[sam_info$growthCondition=="minusN",]),]
 data_list <- list(Nplus = otu_Ab_Nplus, Nminus = otu_Ab_Nminus)
 # by Group and Days
-timestamps <- sort(as.integer(levels(sam_info$Days)))
+timestamps <- as.character(sort(as.integer(levels(sam_info$Days))))
 otu_Ab_Nplus_times <- list()
 otu_Ab_Nminus_times <- list()
 data_list_times <- list()
