@@ -36,7 +36,7 @@ stabENG = function(Y,var.thresh, subsample.ratio = NULL, labels = NULL,
     if (missing(nCores)) {
       nCores = parallel::detectCores() - 2
     } else if (nCores < 2) stop("if method is to be run in parallel, at least two threads should be initiated. Try nCores=2. \n")
-    cat('Parallelizing with ', nCores,' cores. \n')
+    cat('Parallelizing with ', nCores, ' cores. \n')
   }
   if (rep.num < 1) {
     stop("Number of subsamplings must be positive. \n")
@@ -167,7 +167,7 @@ stabENG_select_lambda1 = function(Y, weights="equal",labels, stars.thresh, stars
   est$opt.fit = preprocess_and_estimate_network(Y,labels = labels, lambda1 = est$opt.lambda1, lambda2 = lambda2)$prec
   est$opt.sparsities = unlist(lapply(est$opt.fit,sparsity))
   return(est)
-  cat('Tuning lambda1 done. \n')
+  if(verbose) cat('Tuning lambda1 done. \n')
 }
 
 stabENG_select_lambda1_parallel = function(Y,labels, rep.num,n.vals,stars.subsample.ratios,
@@ -206,7 +206,7 @@ stabENG_select_lambda2_eBIC = function(Y,labels, weights="equal",
     mods.lam2[[i]] = preprocess_and_estimate_network(Y,labels = labels, lambda1 = lambda1, lambda2 = lambda2.vals[i])$prec
     ebic.vals[i] = stabJGL::eBIC_adapted(mods.lam2[[i]],sample.cov=sample.cov,n.vals=n.vals,gamma=gamma)
     done <- round(100 * i / nlambda2)
-    cat('Tuning lambda2: ', done, ' % done \n')
+    if(verbose) cat('Tuning lambda2: ', done, ' % done \n')
   }
   opt.ind = which.min(ebic.vals)
   res=list(opt.fit=mods.lam2[[opt.ind]], opt.lambda1 = lambda1, opt.lambda2 = lambda2.vals[opt.ind], opt.index = opt.ind,opt.ebic=ebic.vals[opt.ind],
