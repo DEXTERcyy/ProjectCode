@@ -6,7 +6,7 @@ library(SPRING)
 library(stabJGL)
 stabENG = function(Y,var.thresh, subsample.ratio = NULL, labels = NULL,
                    rep.num,  nlambda1,lambda1.min,lambda1.max,nlambda2,lambda2.min,lambda2.max,lambda2.init,
-                   ebic.gamma,verbose=T, retune.lambda1=F,parallelize=T,nCores,weights="equal"){
+                   ebic.gamma,verbose=F, retune.lambda1=F,parallelize=T,nCores,weights="equal"){
 
   if (length(unique(unlist(lapply(Y, ncol)))) !=1) {
     stop("dimension (no of variables) not equal for all data sets.")
@@ -36,6 +36,7 @@ stabENG = function(Y,var.thresh, subsample.ratio = NULL, labels = NULL,
     if (missing(nCores)) {
       nCores = parallel::detectCores() - 2
     } else if (nCores < 2) stop("if method is to be run in parallel, at least two threads should be initiated. Try nCores=2. \n")
+    cat('Parallelizing with ', nCores,' cores. \n')
   }
   if (rep.num < 1) {
     stop("Number of subsamplings must be positive. \n")

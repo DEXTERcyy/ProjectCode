@@ -1,5 +1,6 @@
-#%% requirements
-# !ebic.gamma: if too sparse change to 0.6
+# #%% requirements
+# # !ebic.gamma: if too sparse change to 0.6
+cat(R.version.string, "\nR Home:", R.home(), "\nR lib:", .libPaths(), "\n")
 if (!requireNamespace("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if (!requireNamespace("devtools", quietly = TRUE)) install.packages("devtools")
 library(devtools, quietly = TRUE)
@@ -37,11 +38,13 @@ library(ggraph)
 library(tidyverse)
 library(RColorBrewer)
 library(dplyr)
-source("Packages//stabENG.r")
-source("Packages//MyENG.r")
-source("Packages//stabENG.r")
-source("Packages//MyPlot.r")
-rawdata <- readRDS("data//DavarData1_substrate_phyloseq_1226_final_filtered.rds")
+source("//home//14720078//ProjectCode//Packages//stabENG.r")
+source("//home//14720078//ProjectCode//Packages//MyENG.r")
+source("//home//14720078//ProjectCode//Packages//stabENG.r")
+source("//home//14720078//ProjectCode//Packages//MyPlot.r")
+cat("Packages loaded successfully\n")
+start_time <- Sys.time()
+rawdata <- readRDS("//home//14720078//ProjectCode//data//DavarData1_substrate_phyloseq_1226_final_filtered.rds")
 otu_raw <- otu_table(rawdata)
 otu_RA <- transform_sample_counts(otu_raw, function(x) x / sum(x) )
 otu_RA <- filter_taxa(otu_RA, function(x) mean(x) > 1e-3, TRUE)
@@ -59,7 +62,7 @@ timestamps <- as.character(sort(as.integer(levels(sam_info$Days))))
 otu_Ab_Nplus_times <- list()
 otu_Ab_Nminus_times <- list()
 data_list_times <- list()
-n_sim <- 5
+n_sim <- 25
 for (i in timestamps)
   {
     otu_Ab_Nplus_times[[i]] <- otu_Ab[rownames(otu_Ab) %in% 
@@ -76,12 +79,12 @@ network_pcor <- list()
 confusion_results_df <- list()
 for (i in timestamps)
 {
-  plot_path = paste0("Plots//BigDataDaysFilter//Day_",i)
+  plot_path = paste0("//home//14720078//ProjectCode//Plots//BigDataDaysFilter//Day_",i)
   data_list <- data_list_times[[i]]
   cat('Calculating network on day ',i,'\n')
   network_results <- stabENG(data_list, labels = shared_otu, var.thresh = 0.1, rep.num = 25,
     nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-    lambda2.init=0.01,ebic.gamma=0.2)
+    lambda2.init=0.01,ebic.gamma=0.2) #nCores = as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK")))
   network_list_raw[[i]]$Nplus <- network_results$opt.fit$Nplus # precision matrix estimates
   network_list_raw[[i]]$Nminus <- network_results$opt.fit$Nminus # precision matrix estimates
   network_pcor_raw[[i]]$Nplus <- network_results$opt.fit.pcor$Nplus
@@ -155,13 +158,14 @@ for (i in timestamps)
         Nminus = synthesize_scaled_data(otu_Ab_Nminus, network_list[[i]]$Nminus)
       )
     }
-  cat('Calculate simulation data network on day ',i,'\n')
+  cat('Calculate simulation data network on day ',i,' start.\n')
   Res_sim <- list()
   for (j in 1:n_sim)
     {
       Res_sim[[i]][[j]] <- stabENG(Sim_list[[i]][[j]], labels = shared_otu, var.thresh = 0.1, rep.num = 25,
         nlambda1=20,lambda1.min=0.01,lambda1.max=1,nlambda2=20,lambda2.min=0,lambda2.max=0.1,
-        lambda2.init=0.01,ebic.gamma=0.2)
+        lambda2.init=0.01,ebic.gamma=0.2) #nCores = as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK")))
+      cat('Simulation Progress on Day',i,':', 100*j/n_sim,'% done.\n')
       # filter edge sparsity
       Res_sim[[i]][[j]]$opt.fit$Nplus[abs(Res_sim[[i]][[j]]$opt.fit$Nplus) < 0.01] <- 0
       Res_sim[[i]][[j]]$opt.fit$Nminus[abs(Res_sim[[i]][[j]]$opt.fit$Nminus) < 0.01] <- 0
@@ -283,13 +287,14 @@ for (i in timestamps)
 selected_metrics <- c("TPR", "FPR", "F1")
 filtered_data <- confusion_results_df %>% filter(metric %in% selected_metrics)
 
-# %% Plot
-#png(filename = "Plots//BigDataDaysFilter//boxplot_confusion_matrix.png")
-ggplot(filtered_data, aes(x = factor(as.integer(times)), y = value, fill = group)) +
+# Plot
+png(filename = "//home//14720078//ProjectCode//Plots//BigDataDaysFilter//boxplot_confusion_matrix.png")
+ggplot(filtered_data, aes(x = factor(as.integer(times)), y = value)) + # fill = group
   geom_boxplot(outlier.shape = 21, outlier.fill = "white", outlier.color = "black", position = position_dodge(0.8)) +
   scale_fill_manual(values = c("Nplus" = "#00BFC4", "Nminus" = "#F8766D")) +  # Custom colors
   facet_wrap(~metric, scales = "free_y") +  # Create separate plots for each metric
   labs(x = "Times", y = "Value", title = "Confusion Metrics") +
+  ylim(0, 1) +  # Set y-axis limits
   theme_minimal(base_size = 14) +  # Clean theme with adjusted font size
   theme(
     legend.position = "top",  # Move legend to top
@@ -297,10 +302,8 @@ ggplot(filtered_data, aes(x = factor(as.integer(times)), y = value, fill = group
     panel.border = element_rect(color = "black", fill = NA),  # Add border
     strip.text = element_text(face = "bold", size = 12)  # Make facet labels bold
   )
-#dev.off()
-# %% save network_list and network_pcor as csv
-write.csv(network_pcor, "DataImage//network_pcor.csv")
-save.image("DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
-cat("All done")
-cat(Sys.time() - start_time)
-  
+dev.off()
+# save network_list and network_pcor as csv
+write.csv(network_pcor, "//home//14720078//ProjectCode//DataImage//network_pcor.csv")
+save.image("//home//14720078//ProjectCode//DataImage//big1226_Days_network_results_Big_Days_Filtered.RData")
+cat("All done: ", Sys.time() - start_time, "\n")
