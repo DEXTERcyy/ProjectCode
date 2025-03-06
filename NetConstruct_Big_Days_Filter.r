@@ -9,7 +9,7 @@ if (!requireNamespace("phyloseq", quietly = TRUE)) BiocManager::install("phylose
 if (!requireNamespace("SPRING", quietly = TRUE)) devtools::install_github("GraceYoon/SPRING")
 if (!requireNamespace("SpiecEasi", quietly = TRUE)) devtools::install_github("zdk123/SpiecEasi")
 if (!requireNamespace("stabJGL", quietly = TRUE)) devtools::install_github("camiling/stabJGL")
-devtools::install_github("stefpeschel/NetCoMi", ref = "develop",repos = c("https://cloud.r-project.org/",BiocManager::repositories()))
+if (!requireNamespace("NetCoMi", quietly = TRUE)) devtools::install_github("stefpeschel/NetCoMi", ref = "develop",repos = c("https://cloud.r-project.org/",BiocManager::repositories()))
 if (!requireNamespace("caret", quietly = TRUE)) install.packages("caret")
 if (!requireNamespace("pROC", quietly = TRUE)) install.packages("pROC")
 if (!requireNamespace("MLmetrics", quietly = TRUE)) install.packages("MLmetrics")
