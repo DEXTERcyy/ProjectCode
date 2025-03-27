@@ -3,7 +3,7 @@ load(file = "DataImage\\big1226_Days_network_results_Big_Days_Filtered.RData")
 if(!requireNamespace("discordant", quietly = TRUE)) install.packages("discordant")
 if(!requireNamespace("Biobase", quietly = TRUE)) install.packages("Biobase")
 if(!requireNamespace("igraph", quietly = TRUE)) install.packages("igraph")
-# %% Modified function to analyze differential correlations with better handling for small feature sets
+# %% analyze differential correlations with better handling for small feature sets
 analyzeFisherCorrelations <- function(assoMat1, assoMat2, countMat1, countMat2,
   output_dir = output_dir,
   p_adjust_method = "BH", # Benjamini-Hochberg FDR control
